@@ -3,12 +3,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# IDEA artifacts and output dirs
-.idea
-out
-test-output
-atlassian-ide-plugin.xml
-
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
@@ -42,38 +36,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-
-# Miscellaneous
-*.java.hsp
-*.sonarj
-*.sw*
-build.sh
-integration-repo
-ivy-cache
-argfile*
-activemq-data/
-classes/
-
-# Log files
-jxl.log
-jmx.log
-derby.log
-
-# Gradle artifacts
-.gradle
-.gradletasknamecache
-/build
-buildSrc/build
-/spring-*/build
-/framework-bom/build
-/framework-docs/build
-/integration-tests/build
-/src/asciidoc/build
-spring-test/test-output/
-
-# Eclipse artifacts, including WTP generated manifests
-bin
-spring-*/src/main/java/META-INF/MANIFEST.MF
-
-#rar file
-.rar
