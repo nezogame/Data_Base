@@ -1,4 +1,4 @@
-package org.denys.hudymov;
+package org.denys.hudymov.repository;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,6 +27,7 @@ public class DataSource {
         HikariConfig config = new HikariConfig("/HotelDB.properties");
         dataSource = new HikariDataSource(config);
     }
+
     public static Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
