@@ -1,17 +1,21 @@
 package org.denys.hudymov.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface Dao<T> {
-    void create(T entity) ;
+    void create(T entity);
 
-    void create(List<T> entities) ;
+    void create(List<T> entities);
 
-    List<T> read() ;
+    List<T> read();
 
-    void update(T entity) ;
+    Optional<List<T>> get(long id);
 
-    void update(List<T> entities) ;
 
-    void delete(int entityId) ;
+    void update(T entity);
+
+    void update(List<T> entities);
+
+    void delete(int entityId);
 }
