@@ -17,8 +17,8 @@ import java.sql.Timestamp;
 @ToString
 public class HotelAccommodation {
     private Long accommodationId;
-    private Long client_id;
-    private Long room_id;
+    private Long clientId;
+    private Long roomId;
     private Timestamp arrivalDate;
     private Timestamp departureDate;
     private String note;

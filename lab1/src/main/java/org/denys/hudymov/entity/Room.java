@@ -16,6 +16,7 @@ import lombok.ToString;
 public class Room {
     private Long roomId;
     private String roomNumber;
+    private Integer seatsNumber;
     private String comfort;
     private String price;
     private Boolean occupied;

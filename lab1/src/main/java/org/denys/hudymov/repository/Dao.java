@@ -12,7 +12,6 @@ public interface Dao<T> {
 
     Optional<List<T>> get(long id);
 
-
     void update(T entity);
 
     void update(List<T> entities);

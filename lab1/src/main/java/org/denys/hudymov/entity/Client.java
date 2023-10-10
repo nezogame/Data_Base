@@ -30,7 +30,7 @@ public class Client {
 
     public String getPassportData() {
         if(patronymic==null){
-            return "FRAUD";
+            return "<<FRAUD>>";
         }
         return passportData;
     }

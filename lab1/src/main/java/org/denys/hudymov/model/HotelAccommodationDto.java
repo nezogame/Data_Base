@@ -1,11 +1,15 @@
 package org.denys.hudymov.model;
 
+import lombok.Builder;
+
 import java.sql.Timestamp;
 
+
+@Builder
 public record HotelAccommodationDto(
         Long accommodationId,
-        Long client_id,
-        Long room_id,
+        Long clientId,
+        Long roomId,
         Timestamp arrivalDate,
         Timestamp departureDate,
         String note

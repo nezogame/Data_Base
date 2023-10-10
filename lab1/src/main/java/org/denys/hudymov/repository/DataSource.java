@@ -23,7 +23,6 @@ public class DataSource {
     private static HikariDataSource dataSource = null;
 
     static {
-
         HikariConfig config = new HikariConfig("/HotelDB.properties");
         dataSource = new HikariDataSource(config);
     }
