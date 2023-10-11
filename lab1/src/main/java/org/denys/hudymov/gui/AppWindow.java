@@ -6,17 +6,29 @@ import lombok.Getter;
 import org.denys.hudymov.controller.ClientController;
 import org.denys.hudymov.controller.HotelAccommodationController;
 import org.denys.hudymov.controller.RoomController;
+import org.denys.hudymov.model.Validator;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.UIManager;
+import javax.swing.table.*;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.sql.SQLException;
 
 
 @Getter
@@ -28,6 +40,20 @@ enum Column {
 
     Column(String columnName) {
         this.columnName = columnName;
+    }
+}
+
+@Getter
+enum Comfort {
+    NO_ROOM("─"),
+    SINGLE("Single Room"),
+    STANDARD("Standard"),
+    DELUXE("Deluxe"),
+    PRESIDENT("President Room");
+    private final String comfort;
+
+    Comfort(String comfort) {
+        this.comfort = comfort;
     }
 }
 
@@ -45,9 +71,25 @@ public class AppWindow extends JFrame {
     private JTable accommodationTable;
     private JTable clientsTable;
     private JTextField roomNumberField;
-    private JComboBox comboBox1;
-    private JTextField textField2;
-    private JTextField textField1;
+    private JComboBox comfortBox;
+    private JTextField priceText;
+    private JTextField seatsNumberText;
+    private JButton addRoomButton;
+    private JTextPane CommentTextPane;
+    private JScrollPane CommentScrollPane;
+    private JTextField nameField;
+    private JTextField surnameField;
+    private JTextField patronymicField;
+    private JTextField PassportCodeField;
+    private JComboBox roomNumberComBox;
+    private JComboBox PassportComBox;
+    private JComboBox accommodationComBox;
+    private JTextField updateRoomNumberField;
+    private JTextField updateSeatsNumberText;
+    private JComboBox updateComfortBox;
+    private JTextField updatePriceText;
+    private JTextField updateOccupied;
+    private JButton updateRoomBtn;
     private ClientController clientController = ClientController.builder().build();
     private RoomController roomController = RoomController.builder().build();
     private HotelAccommodationController hotelAccommodationController = HotelAccommodationController.builder().build();
@@ -57,25 +99,22 @@ public class AppWindow extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setVisible(true);
         setContentPane(getPanel1());
-        populateClientsTable();
-        populateRoomsTable();
-        populateAccommodationTable();
-        render();
-        changeColorOfIdColumns();
-
+        populateTables();
+        populateComboBox();
         getRoomNumberField().addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                if (getRoomNumberField().getText().equals("3/10")) {
+                if (getRoomNumberField().getText().equals("Example: 3/10")) {
                     getRoomNumberField().setText("");
-                    getRoomNumberField().setForeground(Color.white);
+                    getRoomNumberField().setForeground(Color.BLACK);
                 }
             }
+
             @Override
             public void focusLost(FocusEvent e) {
                 if (getRoomNumberField().getText().isEmpty()) {
                     getRoomNumberField().setForeground(Color.GRAY);
-                    getRoomNumberField().setText("3/10");
+                    getRoomNumberField().setText("Example: 3/10");
                 }
             }
         });
@@ -85,6 +124,79 @@ public class AppWindow extends JFrame {
 
             }
         });
+        addRoomButton.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var roomNumber = getRoomNumberField().getText();
+            var seatsNumber = getSeatsNumberText().getText();
+            var comfort = getComfortBox().getSelectedItem().toString();
+            var price = getPriceText().getText();
+            getRoomNumberField().setText("");
+            getSeatsNumberText().setText("");
+            getComfortBox().setSelectedItem("─");
+            getPriceText().setText("");
+
+            try {
+                Validator.validateRoomNumber(roomNumber);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateNumberOfSeats(seatsNumber);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateComfort(comfort);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(price);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+            try {
+                roomController.addRoom(roomNumber, Integer.parseInt(seatsNumber), comfort, price);
+            } catch (SQLException sqlException) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, sqlException);
+            }
+            populateRoomsTable();
+        });
+        roomNumberComBox.addActionListener(e -> {
+            var room = roomController.getRoomByNumber(getRoomNumberComBox().getSelectedItem().toString());
+            getUpdateRoomNumberField().setText(room.getRoomNumber());
+            getUpdateSeatsNumberText().setText(room.getSeatsNumber().toString());
+            getUpdateComfortBox().setSelectedItem(room.getComfort());
+            getUpdatePriceText().setText(room.getPrice());
+            getUpdateOccupied().setText(room.getOccupied().toString());
+        });
+        updateRoomBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+    }
+
+    private void populateTables() {
+        populateClientsTable();
+        populateRoomsTable();
+        populateAccommodationTable();
+        render();
+        changeColorOfIdColumns();
     }
 
     private void populateClientsTable() {
@@ -99,11 +211,16 @@ public class AppWindow extends JFrame {
         columnModel.setColumnIdentifiers(columns);
         clients.forEach(columnModel::addRow);
         getClientsTable().setModel(columnModel);
+
+        //add item for update query in combo box
+        for (var c : clients) {
+            getPassportComBox().addItem(c.get(4));
+        }
     }
 
     private void populateRoomsTable() {
         String[] columns = {"Room ID", "Room Number", "Seats Number", "Comfort", "Price", "Occupied"};
-        var clients = roomController.displayRooms();
+        var rooms = roomController.displayRooms();
         /*disable editing in table cells*/
         DefaultTableModel columnModel = new DefaultTableModel() {
             public boolean isCellEditable(int row, int column) {
@@ -111,8 +228,13 @@ public class AppWindow extends JFrame {
             }
         };
         columnModel.setColumnIdentifiers(columns);
-        clients.forEach(columnModel::addRow);
+        rooms.forEach(columnModel::addRow);
         getRoomsTable().setModel(columnModel);
+
+        //add item for update query in combo box
+        for (var r : rooms) {
+            getRoomNumberComBox().addItem(r.get(1));
+        }
     }
 
     private void populateAccommodationTable() {
@@ -128,6 +250,11 @@ public class AppWindow extends JFrame {
         columnModel.setColumnIdentifiers(columns);
         accommodationForAllTime.forEach(columnModel::addRow);
         getAccommodationTable().setModel(columnModel);
+
+        //add item for update query in combo box
+        for (var a : accommodationForAllTime) {
+            getAccommodationComBox().addItem(a.get(0));
+        }
     }
 
     private void render() {
@@ -186,9 +313,16 @@ public class AppWindow extends JFrame {
                 getRoomsTable().getColumn(columnName).setCellRenderer(cellRenderer);
                 getAccommodationTable().getColumn(columnName).setCellRenderer(cellRenderer);
             }
-            case "Accommodation ID"->{
+            case "Accommodation ID" -> {
                 getAccommodationTable().getColumn(columnName).setCellRenderer(cellRenderer);
             }
+        }
+    }
+
+    private void populateComboBox() {
+        for (var comfort : Comfort.values()) {
+            getComfortBox().addItem(comfort.getComfort());
+            getUpdateComfortBox().addItem(comfort.getComfort());
         }
     }
 }
