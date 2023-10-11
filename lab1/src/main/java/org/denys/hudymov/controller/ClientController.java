@@ -31,4 +31,8 @@ public class ClientController {
         });
         return clientsVector;
     }
+
+    public void addClient(){
+
+    }
 }
