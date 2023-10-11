@@ -2,12 +2,14 @@ package org.denys.hudymov.repository;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.EqualsAndHashCode;
 import org.denys.hudymov.entity.Room;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -21,14 +23,21 @@ import java.util.Optional;
 @ToString
 @EqualsAndHashCode
 public class RoomDao implements Dao<Room>{
+
+    private final String INSERT_SQL =
+            "INSERT INTO Rooms " +
+                    "VALUES(?,?,?,?,?)";
+
     @Override
-    public void create(Room entity) {
+    public void create(Room entity) throws SQLException {
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_SQL)) {
+            setParameters(preparedStatement, entity);
 
-    }
-
-    @Override
-    public void create(List<Room> entities) {
-
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException();
+        }
     }
 
     @Override
@@ -58,7 +67,7 @@ public class RoomDao implements Dao<Room>{
     }
 
     @Override
-    public Optional<List<Room>> get(long id) {
+    public Optional<Room> get(long id) {
         return Optional.empty();
     }
 
@@ -68,12 +77,43 @@ public class RoomDao implements Dao<Room>{
     }
 
     @Override
-    public void update(List<Room> entities) {
+    public void delete(int entityId) {
 
     }
 
-    @Override
-    public void delete(int entityId) {
+    private void setParameters(@NotNull PreparedStatement preparedStatement, @NotNull Room entity) throws SQLException {
+        preparedStatement.setString(1, entity.getRoomNumber());
+        preparedStatement.setInt(2, entity.getSeatsNumber());
+        preparedStatement.setString(3, entity.getComfort());
+        preparedStatement.setString(4, entity.getPrice());
+        preparedStatement.setBoolean(5, entity.getOccupied());
+    }
 
+    public Optional<Room> getByRoomNumber(String number) {
+        Optional<Room> room = Optional.ofNullable(null);
+        try (Connection connection = DataSource.getConnection()) {
+            String SelectQuery = "SELECT room_number, seats_number, comfort, price, occupied FROM Rooms WHERE room_number=?";
+            PreparedStatement preparedStatement =
+                    connection.prepareStatement(SelectQuery);
+            preparedStatement.setString(1,number);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) { // Check if there is a result
+
+                room = Optional.of(Room
+                        .builder()
+                        .roomNumber(resultSet.getString("room_number"))
+                        .seatsNumber(resultSet.getInt("seats_number"))
+                        .comfort(resultSet.getString("comfort"))
+                        .price(resultSet.getString("price"))
+                        .occupied(resultSet.getBoolean("occupied"))
+                        .build());
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return room;
     }
 }
