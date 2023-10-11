@@ -27,11 +27,6 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
     }
 
     @Override
-    public void create(List<HotelAccommodation> entities) {
-
-    }
-
-    @Override
     public List<HotelAccommodation> read() {
         List<HotelAccommodation> hotelAccommodations = new ArrayList<>();
         try (Connection connection = DataSource.getConnection();
@@ -58,17 +53,12 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
     }
 
     @Override
-    public Optional<List<HotelAccommodation>> get(long id) {
+    public Optional<HotelAccommodation> get(long id) {
         return Optional.empty();
     }
 
     @Override
     public void update(HotelAccommodation entity) {
-
-    }
-
-    @Override
-    public void update(List<HotelAccommodation> entities) {
 
     }
 
