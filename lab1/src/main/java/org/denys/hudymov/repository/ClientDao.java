@@ -1,14 +1,15 @@
 package org.denys.hudymov.repository;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.Client;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,15 +23,20 @@ import java.util.Optional;
 @ToString
 @EqualsAndHashCode
 public class ClientDao implements Dao<Client> {
+    private final String INSERT_SQL =
+            "INSERT INTO Clients " +
+                    "VALUES(?,?,?,?,?,?)";
 
     @Override
     public void create(Client entity) {
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_SQL)) {
+            setParameters(preparedStatement, entity);
 
-    }
-
-    @Override
-    public void create(List<Client> entities) {
-
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -39,7 +45,7 @@ public class ClientDao implements Dao<Client> {
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement()) {
 
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM clients");
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM Clients");
             while (resultSet.next()) {
                 Client client = Client
                         .builder()
@@ -60,23 +66,58 @@ public class ClientDao implements Dao<Client> {
     }
 
     @Override
-    public Optional<List<Client>> get(long id) {
+    public Optional<Client> get(long id) {
+        Optional<Client> client = Optional.ofNullable(null);
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            String READ_SQL = "SELECT * FROM Clients " +
+                    "WHERE client_id=?";
+            ResultSet resultSet = statement.executeQuery(READ_SQL);
+            client = Optional.ofNullable(Client
+                    .builder()
+                    .clientId(resultSet.getLong("client_id"))
+                    .surname(resultSet.getString("surname"))
+                    .name(resultSet.getString("name"))
+                    .patronymic(resultSet.getString("patronymic"))
+                    .passportData(resultSet.getString("passport_data"))
+                    .Comment(resultSet.getString("comment"))
+                    .build());
 
-        return Optional.empty();
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return client;
     }
 
     @Override
     public void update(Client entity) {
+        try (Connection connection = DataSource.getConnection()) {
+            String UPDATE_SQL = "UPDATE Clients SET name=?, surname=?, patronymic=?, passport_data=?, comment=? " +
+                    "WHERE client_id=?";
+            PreparedStatement preparedStatement =
+                    connection.prepareStatement(UPDATE_SQL);
 
-    }
+            setParameters(preparedStatement, entity);
+            preparedStatement.setLong(6, entity.getClientId());
+            preparedStatement.executeUpdate();
 
-    @Override
-    public void update(List<Client> entities) {
-
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void delete(int entityId) {
 
+    }
+
+    private void setParameters(@NotNull PreparedStatement preparedStatement, @NotNull Client entity) throws SQLException {
+        preparedStatement.setString(1, entity.getName());
+        preparedStatement.setString(2, entity.getSurname());
+        preparedStatement.setString(3, entity.getPatronymic());
+        preparedStatement.setString(4, entity.getPassportData());
+        preparedStatement.setString(5, entity.getComment());
     }
 }
