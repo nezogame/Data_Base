@@ -11,7 +11,7 @@ public interface Dao<T> {
 
     Optional<T> get(long id);
 
-    void update(T entity);
+    void update(T entity) throws SQLException;
 
     void delete(int entityId);
 }

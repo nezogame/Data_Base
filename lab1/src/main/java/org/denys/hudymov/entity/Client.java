@@ -19,7 +19,7 @@ public class Client {
     private String name;
     private String patronymic;
     private String passportData;
-    private String Comment;
+    private String comment;
 
     public String getPatronymic() {
         if(patronymic==null){
