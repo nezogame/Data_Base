@@ -25,17 +25,24 @@ import java.util.Optional;
 public class ClientDao implements Dao<Client> {
     private final String INSERT_SQL =
             "INSERT INTO Clients " +
-                    "VALUES(?,?,?,?,?,?)";
+                    "VALUES(?,?,?,?,?)";
+
+    private final String UPDATE_SQL = "UPDATE Clients SET surname=?, name=?, patronymic=?, passport_data=?, comment=? " +
+            "WHERE client_id=?";
+
+    private final String DELETE_SQL = "DELETE FROM  Clients " +
+            "WHERE client_id=?";
 
     @Override
-    public void create(Client entity) {
+    public void create(Client entity) throws SQLException {
         try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_SQL)) {
-            setParameters(preparedStatement, entity);
+             PreparedStatement preparedStatement =
+                     connection.prepareStatement(INSERT_SQL)) {
 
+            setParameters(preparedStatement, entity);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SQLException();
         }
     }
 
@@ -54,7 +61,7 @@ public class ClientDao implements Dao<Client> {
                         .name(resultSet.getString("name"))
                         .patronymic(resultSet.getString("patronymic"))
                         .passportData(resultSet.getString("passport_data"))
-                        .Comment(resultSet.getString("comment"))
+                        .comment(resultSet.getString("comment"))
                         .build();
                 clients.add(client);
             }
@@ -80,7 +87,7 @@ public class ClientDao implements Dao<Client> {
                     .name(resultSet.getString("name"))
                     .patronymic(resultSet.getString("patronymic"))
                     .passportData(resultSet.getString("passport_data"))
-                    .Comment(resultSet.getString("comment"))
+                    .comment(resultSet.getString("comment"))
                     .build());
 
             resultSet.close();
@@ -92,17 +99,12 @@ public class ClientDao implements Dao<Client> {
 
     @Override
     public void update(Client entity) {
-        try (Connection connection = DataSource.getConnection()) {
-            String UPDATE_SQL = "UPDATE Clients SET name=?, surname=?, patronymic=?, passport_data=?, comment=? " +
-                    "WHERE client_id=?";
-            PreparedStatement preparedStatement =
-                    connection.prepareStatement(UPDATE_SQL);
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_SQL)) {
 
             setParameters(preparedStatement, entity);
             preparedStatement.setLong(6, entity.getClientId());
             preparedStatement.executeUpdate();
-
-            preparedStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -110,14 +112,86 @@ public class ClientDao implements Dao<Client> {
 
     @Override
     public void delete(int entityId) {
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SQL)) {
 
+            preparedStatement.setLong(1, entityId);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setParameters(@NotNull PreparedStatement preparedStatement, @NotNull Client entity) throws SQLException {
-        preparedStatement.setString(1, entity.getName());
-        preparedStatement.setString(2, entity.getSurname());
+        preparedStatement.setString(1, entity.getSurname());
+        preparedStatement.setString(2, entity.getName());
         preparedStatement.setString(3, entity.getPatronymic());
         preparedStatement.setString(4, entity.getPassportData());
         preparedStatement.setString(5, entity.getComment());
+    }
+
+    public List<Long> getAllId() {
+        List<Long> clientsId = new ArrayList<>();
+        String selectSQL = "SELECT client_id FROM Clients " +
+                "ORDER BY client_id";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                clientsId.add(resultSet.getLong("client_id"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientsId;
+    }
+
+    public List<String> getAllPassportCode() {
+        List<String> clientsPassport = new ArrayList<>();
+        String selectSQL = "SELECT passport_data FROM Clients " +
+                "ORDER BY passport_data";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                clientsPassport.add(resultSet.getString("passport_data"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientsPassport;
+    }
+
+    public Optional<Client> getByPassport(String passport) {
+        Optional<Client> client = Optional.ofNullable(null);
+        try (Connection connection = DataSource.getConnection()) {
+            String SelectQuery = "SELECT * FROM Clients WHERE passport_data=?";
+            PreparedStatement preparedStatement =
+                    connection.prepareStatement(SelectQuery);
+            preparedStatement.setString(1, passport);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) { // Check if there is a result
+
+                client = Optional.of(Client
+                        .builder()
+                        .clientId(resultSet.getLong("client_id"))
+                        .surname(resultSet.getString("surname"))
+                        .name(resultSet.getString("name"))
+                        .patronymic(resultSet.getString("patronymic"))
+                        .passportData(resultSet.getString("passport_data"))
+                        .comment(resultSet.getString("comment"))
+                        .build());
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return client;
     }
 }
