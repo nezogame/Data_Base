@@ -74,7 +74,7 @@ public class ClientDao implements Dao<Client> {
 
     @Override
     public Optional<Client> get(long id) {
-        Optional<Client> client = Optional.ofNullable(null);
+        Optional<Client> client = Optional.empty();
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement()) {
             String READ_SQL = "SELECT * FROM Clients " +
@@ -167,7 +167,7 @@ public class ClientDao implements Dao<Client> {
     }
 
     public Optional<Client> getByPassport(String passport) {
-        Optional<Client> client = Optional.ofNullable(null);
+        Optional<Client> client = Optional.empty();
         try (Connection connection = DataSource.getConnection()) {
             String SelectQuery = "SELECT * FROM Clients WHERE passport_data=?";
             PreparedStatement preparedStatement =
