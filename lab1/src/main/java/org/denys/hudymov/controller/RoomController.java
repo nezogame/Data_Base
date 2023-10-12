@@ -5,11 +5,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.denys.hudymov.repository.ClientDao;
+import org.denys.hudymov.entity.Room;
 import org.denys.hudymov.repository.RoomDao;
 
-import javax.swing.text.html.Option;
-import java.util.Optional;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Vector;
 
 @Data
@@ -19,7 +19,8 @@ import java.util.Vector;
 @EqualsAndHashCode
 public class RoomController {
     private static final RoomDao ROOM_DAO = RoomDao.builder().build();
-    public  Vector<Vector<Object>> displayRooms(){
+
+    public Vector<Vector<Object>> displayRooms() {
         var clientsVector = new Vector<Vector<Object>>();
         var clients = ROOM_DAO.read();
         clients.forEach(room -> {
@@ -28,10 +29,61 @@ public class RoomController {
             row.add(room.getRoomNumber());
             row.add(room.getSeatsNumber());
             row.add(room.getComfort());
-            row.add(room.getPrice() != null ?  room.getPrice()+"$" : "NULL" );
+            row.add(room.getPrice() != null ? room.getPrice() + "$" : "NULL");
             row.add(room.getOccupied());
             clientsVector.add(row);
         });
         return clientsVector;
+    }
+
+    public void addRoom(String roomNumber, Integer seatsNumber, String comfort, String price) throws SQLException {
+        ROOM_DAO.create(
+                Room.builder()
+                        .roomNumber(roomNumber)
+                        .seatsNumber(seatsNumber)
+                        .comfort(comfort)
+                        .price(price)
+                        .occupied(false)
+                        .build()
+        );
+    }
+
+    public Room getRoomByNumber(String number) {
+        return ROOM_DAO.getByRoomNumber(number).get();
+    }
+
+    public void updateRoom(Long id, String roomNumber, Integer seatsNumber, String comfort, String price,
+                           Boolean occupied)  {
+
+        ROOM_DAO.update(
+                Room.builder()
+                        .roomId(id)
+                        .roomNumber(roomNumber)
+                        .seatsNumber(seatsNumber)
+                        .comfort(comfort)
+                        .price(price)
+                        .occupied(occupied)
+                        .build()
+        );
+    }
+
+    public List<Long> getId() {
+        return ROOM_DAO.getAllId();
+    }
+
+    public List<String> getRoomNumbers() {
+        return ROOM_DAO.getAllRoomNumber();
+    }
+
+    public void deleteRoom(String id) {
+        ROOM_DAO.delete(Integer.parseInt(id));
+    }
+
+    public List<Long> getFreeRooms() {
+        return ROOM_DAO.getAllFreeRoom();
+    }
+
+    public void updateReservation(long id) {
+        ROOM_DAO.updateRoomOccupancy(id);
     }
 }
