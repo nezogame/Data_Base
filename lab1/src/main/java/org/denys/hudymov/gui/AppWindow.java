@@ -30,10 +30,11 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-
 
 @Getter
 enum Column {
@@ -118,6 +119,10 @@ public class AppWindow extends JFrame {
     private JTextField updateDepartText;
     private JTextPane noteTextPane;
     private JTextPane updateNoteTextPane;
+    private JTable table1;
+    private JTable table2;
+    private JTable table3;
+    private JTable table4;
     private ClientController clientController = ClientController.builder().build();
     private RoomController roomController = RoomController.builder().build();
     private HotelAccommodationController hotelAccommodationController = HotelAccommodationController.builder().build();
@@ -399,10 +404,16 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteClientBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
-                clientController.deleteClient(id.get().toString());
+                try {
+                    clientController.deleteClient(id.get().toString());
+                } catch (SQLIntegrityConstraintViolationException constraintException) {
+                    UIManager.put("OptionPane.messageForeground", Color.red);
+                    JFrame jFrame = new JFrame();
+                    JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+                }
 
                 populateAll();
             }
@@ -446,21 +457,21 @@ public class AppWindow extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 StringBuilder exception = new StringBuilder();
 
-                var clientId = getClientAccommodationBox().getSelectedItem().toString();
-                var roomId = getRoomAccommodationBox().getSelectedItem().toString();
+                var clientPassportCode = getClientAccommodationBox().getSelectedItem().toString();
+                var roomNumber = getRoomAccommodationBox().getSelectedItem().toString();
                 var arrival = getArrivalText().getText();
                 var depart = getDepartText().getText();
                 var note = getNoteTextPane().getText();
 
 
                 try {
-                    Validator.validateTextField(clientId, "client ID");
+                    Validator.validateTextField(clientPassportCode, "client ID");
                 } catch (IllegalArgumentException argException) {
                     exception.append(argException.getMessage()).append("\n");
                 }
 
                 try {
-                    Validator.validateTextField(roomId, "room ID");
+                    Validator.validateTextField(roomNumber, "room ID");
                 } catch (IllegalArgumentException argException) {
                     exception.append(argException.getMessage()).append("\n");
                 }
@@ -488,14 +499,17 @@ public class AppWindow extends JFrame {
                     getArrivalText().setText("Example: 2023-09-19 16:20");
                     getDepartText().setText("Example: 2023-10-07 18:45");
                     getNoteTextPane().setText("");
-                    hotelAccommodationController.addReservation(Long.parseLong(clientId),
-                            Long.parseLong(roomId), Timestamp.valueOf(arrival.concat(":00.0")),
+                    hotelAccommodationController.addReservation(clientPassportCode,
+                            roomNumber, Timestamp.valueOf(arrival.concat(":00.0")),
                             Timestamp.valueOf(depart.concat(":00.0")), note);
-                    roomController.updateReservation(Long.parseLong(roomId));
-                } catch (SQLException sqlException) {
+                    roomController.updateReservation(roomNumber);
+                } catch (NoSuchElementException | SQLException addException) {
+                    getArrivalText().setText(arrival);
+                    getDepartText().setText(depart);
+                    getNoteTextPane().setText(note);
                     UIManager.put("OptionPane.messageForeground", Color.red);
                     JFrame jFrame = new JFrame();
-                    JOptionPane.showMessageDialog(jFrame, sqlException);
+                    JOptionPane.showMessageDialog(jFrame, addException.getMessage());
                 }
 
                 populateAll();
@@ -505,10 +519,16 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteRoomBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
-                roomController.deleteRoom(id.get().toString());
+                try {
+                    roomController.deleteRoom(id.get().toString());
+                } catch (SQLIntegrityConstraintViolationException constraintException) {
+                    UIManager.put("OptionPane.messageForeground", Color.red);
+                    JFrame jFrame = new JFrame();
+                    JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+                }
 
                 populateAll();
             }
@@ -517,7 +537,7 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteReservationBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
                 hotelAccommodationController.deleteReservation(id.get().toString());
@@ -722,16 +742,16 @@ public class AppWindow extends JFrame {
         }
     }
 
-    private void populateReservationBox(){
+    private void populateReservationBox() {
         getClientAccommodationBox().removeAllItems();
         getRoomAccommodationBox().removeAllItems();
         getUpdateClientAccommodationBox().removeAllItems();
         getUpdateRoomAccommodationBox().removeAllItems();
-        for (var id : clientController.getId()) {
-            getClientAccommodationBox().addItem(id);
+        for (var passport : clientController.getPassportCodes()) {
+            getClientAccommodationBox().addItem(passport);
         }
-        for (var id : roomController.getFreeRooms()) {
-            getRoomAccommodationBox().addItem(id);
+        for (var roomNumber : roomController.getFreeRooms()) {
+            getRoomAccommodationBox().addItem(roomNumber);
         }
         for (var id : clientController.getId()) {
             getUpdateClientAccommodationBox().addItem(id);
