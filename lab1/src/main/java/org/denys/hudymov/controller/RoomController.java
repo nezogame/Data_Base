@@ -9,6 +9,7 @@ import org.denys.hudymov.entity.Room;
 import org.denys.hudymov.repository.RoomDao;
 
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Vector;
 
@@ -75,15 +76,15 @@ public class RoomController {
         return ROOM_DAO.getAllRoomNumber();
     }
 
-    public void deleteRoom(String id) {
+    public void deleteRoom(String id) throws SQLIntegrityConstraintViolationException {
         ROOM_DAO.delete(Integer.parseInt(id));
     }
 
-    public List<Long> getFreeRooms() {
-        return ROOM_DAO.getAllFreeRoom();
+    public List<String> getFreeRooms() {
+        return ROOM_DAO.getAllFreeRoomNumber();
     }
 
-    public void updateReservation(long id) {
-        ROOM_DAO.updateRoomOccupancy(id);
+    public void updateReservation(String roomNumber) {
+        ROOM_DAO.updateRoomOccupancy(roomNumber);
     }
 }
