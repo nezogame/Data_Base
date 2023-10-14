@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,14 +95,14 @@ public class RoomDao implements Dao<Room> {
     }
 
     @Override
-    public void delete(int entityId) {
+    public void delete(int entityId) throws SQLIntegrityConstraintViolationException {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SQL)) {
 
             preparedStatement.setLong(1, entityId);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
     }
 
@@ -114,7 +115,7 @@ public class RoomDao implements Dao<Room> {
     }
 
     public Optional<Room> getByRoomNumber(String number) {
-        Optional<Room> room = Optional.ofNullable(null);
+        Optional<Room> room = Optional.empty();
         try (Connection connection = DataSource.getConnection()) {
             String SelectQuery = "SELECT * FROM Rooms WHERE room_number=?";
             PreparedStatement preparedStatement =
@@ -178,17 +179,17 @@ public class RoomDao implements Dao<Room> {
         return roomsNumber;
     }
 
-    public List<Long> getAllFreeRoom() {
-        List<Long> roomsId = new ArrayList<>();
-        String selectSQL = "SELECT room_id FROM rooms " +
+    public List<String> getAllFreeRoomNumber() {
+        List<String> roomsId = new ArrayList<>();
+        String selectSQL = "SELECT room_number FROM rooms " +
                 "WHERE occupied=0 " +
-                "ORDER BY room_id";
+                "ORDER BY room_number";
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(selectSQL)) {
 
             while (resultSet.next()) {
-                roomsId.add(resultSet.getLong("room_id"));
+                roomsId.add(resultSet.getString("room_number"));
             }
 
         } catch (SQLException e) {
@@ -197,15 +198,15 @@ public class RoomDao implements Dao<Room> {
         return roomsId;
     }
 
-    public void updateRoomOccupancy(Long id) {
+    public void updateRoomOccupancy(String roomNumber) {
         List<Long> roomsId = new ArrayList<>();
         String updateSQL = "Update Rooms " +
                 "Set occupied=1 " +
-                "WHERE room_id=?";
+                "WHERE room_number=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
 
-            preparedStatement.setLong(1,id);
+            preparedStatement.setString(1,roomNumber);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
