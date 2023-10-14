@@ -6,11 +6,14 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.HotelAccommodation;
+import org.denys.hudymov.repository.ClientDao;
 import org.denys.hudymov.repository.HotelAccommodationDao;
+import org.denys.hudymov.repository.RoomDao;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Vector;
 
 @Data
@@ -20,6 +23,8 @@ import java.util.Vector;
 @EqualsAndHashCode
 public class HotelAccommodationController {
     private static final HotelAccommodationDao HOTEL_ACCOMMODATION_DAO = HotelAccommodationDao.builder().build();
+    private static final ClientDao CLIENT_DAO = ClientDao.builder().build();
+    private static final RoomDao ROOM_DAO = RoomDao.builder().build();
 
     public Vector<Vector<Object>> displayAccommodationForAllTime() {
         var accommodationVector = new Vector<Vector<Object>>();
@@ -41,11 +46,14 @@ public class HotelAccommodationController {
         return HOTEL_ACCOMMODATION_DAO.getAllId();
     }
 
-    public void addReservation(Long clientId, Long roomId, Timestamp arrival, Timestamp depart, String note) throws SQLException {
+    public void addReservation(String clientPassport, String roomNumber, Timestamp arrival, Timestamp depart, String note) throws SQLException, NoSuchElementException {
+        var clientId = CLIENT_DAO.getByPassport(clientPassport);
+        var roomId = ROOM_DAO.getByRoomNumber(roomNumber);
+
         HOTEL_ACCOMMODATION_DAO.create(
                 HotelAccommodation.builder()
-                        .clientId(clientId)
-                        .roomId(roomId)
+                        .clientId(clientId.orElseThrow().getClientId())
+                        .roomId(roomId.orElseThrow().getRoomId())
                         .arrivalDate(arrival)
                         .departureDate(depart)
                         .note(note)
