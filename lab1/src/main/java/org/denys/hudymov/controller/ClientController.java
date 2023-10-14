@@ -9,6 +9,7 @@ import org.denys.hudymov.entity.Client;
 import org.denys.hudymov.repository.ClientDao;
 
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Vector;
 
@@ -78,7 +79,7 @@ public class ClientController {
         );
     }
 
-    public void deleteClient(String id) {
+    public void deleteClient(String id) throws SQLIntegrityConstraintViolationException {
         CLIENT_DAO.delete(Integer.parseInt(id));
     }
 }

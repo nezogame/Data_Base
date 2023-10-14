@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,14 +112,14 @@ public class ClientDao implements Dao<Client> {
     }
 
     @Override
-    public void delete(int entityId) {
+    public void delete(int entityId) throws SQLIntegrityConstraintViolationException {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SQL)) {
 
             preparedStatement.setLong(1, entityId);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
     }
 
