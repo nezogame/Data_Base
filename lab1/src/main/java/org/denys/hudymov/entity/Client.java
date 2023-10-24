@@ -1,5 +1,6 @@
 package org.denys.hudymov.entity;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class Client {
     private String patronymic;
     private String passportData;
     private String comment;
+    private List<HotelAccommodation> accommodations;
 
     public String getPatronymic() {
         if(patronymic==null){
