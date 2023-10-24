@@ -1,5 +1,16 @@
 package org.denys.hudymov.repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,15 +18,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.Client;
 import org.jetbrains.annotations.NotNull;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Data
 @Builder
@@ -77,9 +79,11 @@ public class ClientDao implements Dao<Client> {
         Optional<Client> client = Optional.empty();
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement()) {
-            String READ_SQL = "SELECT * FROM Clients " +
+            String readSql = "SELECT * FROM Clients " +
                     "WHERE client_id=?";
-            ResultSet resultSet = statement.executeQuery(READ_SQL);
+            PreparedStatement preparedStatement = connection.prepareStatement(readSql);
+            preparedStatement.setLong(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
             client = Optional.ofNullable(Client
                     .builder()
                     .clientId(resultSet.getLong("client_id"))
@@ -111,14 +115,14 @@ public class ClientDao implements Dao<Client> {
     }
 
     @Override
-    public void delete(int entityId) {
+    public void delete(int entityId) throws SQLIntegrityConstraintViolationException {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SQL)) {
 
             preparedStatement.setLong(1, entityId);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
     }
 
@@ -193,5 +197,39 @@ public class ClientDao implements Dao<Client> {
             e.printStackTrace();
         }
         return client;
+    }
+
+    public Map<Integer, Client> getUsersAndDayTheySpendByPassportCode(String code) {
+        Map<Integer, Client> clientWithDays = new HashMap<>();
+
+        String selectQuery = "SELECT c.passport_data, c.name, c.surname, c.patronymic, " +
+                "DateDiff(dd, accom.arrival_date,accom.departure_date) as days_spend " +
+                "FROM Clients as c " +
+                "INNER JOIN HotelAccommodations as accom " +
+                "ON c.client_id = accom.client_id " +
+                "WHERE c.passport_data = ?";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
+
+            preparedStatement.setString(1, code);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                clientWithDays.put(
+                        resultSet.getInt("days_spend"),
+                        Client
+                                .builder()
+                                .surname(resultSet.getString("surname"))
+                                .name(resultSet.getString("name"))
+                                .patronymic(resultSet.getString("patronymic"))
+                                .passportData(resultSet.getString("passport_data"))
+                                .build()
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientWithDays;
     }
 }

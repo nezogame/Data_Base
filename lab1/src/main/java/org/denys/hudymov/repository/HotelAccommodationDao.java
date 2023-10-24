@@ -71,10 +71,10 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
 
     @Override
     public Optional<HotelAccommodation> get(long id) {
-        Optional<HotelAccommodation> accommodation = Optional.ofNullable(null);
-        String SelectQuery = "SELECT * FROM HotelAccommodations WHERE accommodation_id=?";
+        Optional<HotelAccommodation> accommodation = Optional.empty();
+        String selectQuery = "SELECT * FROM HotelAccommodations WHERE accommodation_id=?";
         try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SelectQuery);
+             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
         ) {
 
             preparedStatement.setLong(1, id);

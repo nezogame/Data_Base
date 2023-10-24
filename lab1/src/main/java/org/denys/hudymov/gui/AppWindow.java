@@ -3,9 +3,9 @@ package org.denys.hudymov.gui;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.denys.hudymov.controller.ClientController;
-import org.denys.hudymov.controller.HotelAccommodationController;
-import org.denys.hudymov.controller.RoomController;
+import org.denys.hudymov.service.ClientService;
+import org.denys.hudymov.service.HotelAccommodationService;
+import org.denys.hudymov.service.RoomService;
 import org.denys.hudymov.model.Validator;
 
 import javax.swing.JButton;
@@ -30,10 +30,11 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-
 
 @Getter
 enum Column {
@@ -118,9 +119,15 @@ public class AppWindow extends JFrame {
     private JTextField updateDepartText;
     private JTextPane noteTextPane;
     private JTextPane updateNoteTextPane;
-    private ClientController clientController = ClientController.builder().build();
-    private RoomController roomController = RoomController.builder().build();
-    private HotelAccommodationController hotelAccommodationController = HotelAccommodationController.builder().build();
+    private JTable table1;
+    private JTable table3;
+    private JTable table4;
+    private JTable clientHistoryTable;
+    private JButton clientHistoryBtn;
+    private JComboBox clientPassportHistoryBox;
+    private ClientService clientService = ClientService.builder().build();
+    private RoomService roomService = RoomService.builder().build();
+    private HotelAccommodationService hotelAccommodationService = HotelAccommodationService.builder().build();
     private long clintId;
     private long roomId;
     private long accommodationId;
@@ -197,7 +204,7 @@ public class AppWindow extends JFrame {
                 getSeatsNumberText().setText("");
                 getComfortBox().setSelectedItem("─");
                 getPriceText().setText("");
-                roomController.addRoom(roomNumber, Integer.parseInt(seatsNumber), comfort, price);
+                roomService.addRoom(roomNumber, Integer.parseInt(seatsNumber), comfort, price);
             } catch (SQLException sqlException) {
                 UIManager.put("OptionPane.messageForeground", Color.red);
                 JFrame jFrame = new JFrame();
@@ -213,7 +220,7 @@ public class AppWindow extends JFrame {
                 if (selectedRoomNumber.isEmpty()) {
                     return;
                 }
-                var room = roomController.getRoomByNumber(selectedRoomNumber.get().toString());
+                var room = roomService.getRoomByNumber(selectedRoomNumber.get().toString());
                 getUpdateRoomNumberText().setText(room.getRoomNumber());
                 getUpdateSeatsNumberText().setText(room.getSeatsNumber().toString());
                 getUpdateComfortBox().setSelectedItem(room.getComfort());
@@ -229,7 +236,7 @@ public class AppWindow extends JFrame {
                 return;
             }
             var roomNumber = getUpdateRoomNumberText().getText();
-            roomController.updateRoom(
+            roomService.updateRoom(
                     getRoomId(),
                     roomNumber,
                     Integer.parseInt(getUpdateSeatsNumberText().getText()),
@@ -352,7 +359,7 @@ public class AppWindow extends JFrame {
                     getPatronymicText().setText("Optional field");
                     getPassportCodeText().setText("Example: GF123456");
                     getCommentTextPane().setText("");
-                    clientController.addClient(name, surname, patronymic, passport, comment);
+                    clientService.addClient(name, surname, patronymic, passport, comment);
                 } catch (SQLException sqlException) {
                     UIManager.put("OptionPane.messageForeground", Color.red);
                     JFrame jFrame = new JFrame();
@@ -370,7 +377,7 @@ public class AppWindow extends JFrame {
                 if (selectedPassport.isEmpty()) {
                     return;
                 }
-                var client = clientController.getClientByPassport(selectedPassport.get().toString());
+                var client = clientService.getClientByPassport(selectedPassport.get().toString());
                 getUpdateSurnameText().setText(client.getSurname());
                 getUpdateNameText().setText(client.getName());
                 getUpdatePatronymicText().setText(client.getPatronymic());
@@ -383,7 +390,7 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                clientController.updateClient(
+                clientService.updateClient(
                         getClintId(),
                         getUpdateSurnameText().getText(),
                         getUpdateNameText().getText(),
@@ -399,10 +406,16 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteClientBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
-                clientController.deleteClient(id.get().toString());
+                try {
+                    clientService.deleteClient(id.get().toString());
+                } catch (SQLIntegrityConstraintViolationException constraintException) {
+                    UIManager.put("OptionPane.messageForeground", Color.red);
+                    JFrame jFrame = new JFrame();
+                    JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+                }
 
                 populateAll();
             }
@@ -446,21 +459,21 @@ public class AppWindow extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 StringBuilder exception = new StringBuilder();
 
-                var clientId = getClientAccommodationBox().getSelectedItem().toString();
-                var roomId = getRoomAccommodationBox().getSelectedItem().toString();
+                var clientPassportCode = getClientAccommodationBox().getSelectedItem().toString();
+                var roomNumber = getRoomAccommodationBox().getSelectedItem().toString();
                 var arrival = getArrivalText().getText();
                 var depart = getDepartText().getText();
                 var note = getNoteTextPane().getText();
 
 
                 try {
-                    Validator.validateTextField(clientId, "client ID");
+                    Validator.validateTextField(clientPassportCode, "client ID");
                 } catch (IllegalArgumentException argException) {
                     exception.append(argException.getMessage()).append("\n");
                 }
 
                 try {
-                    Validator.validateTextField(roomId, "room ID");
+                    Validator.validateTextField(roomNumber, "room ID");
                 } catch (IllegalArgumentException argException) {
                     exception.append(argException.getMessage()).append("\n");
                 }
@@ -488,14 +501,17 @@ public class AppWindow extends JFrame {
                     getArrivalText().setText("Example: 2023-09-19 16:20");
                     getDepartText().setText("Example: 2023-10-07 18:45");
                     getNoteTextPane().setText("");
-                    hotelAccommodationController.addReservation(Long.parseLong(clientId),
-                            Long.parseLong(roomId), Timestamp.valueOf(arrival.concat(":00.0")),
+                    hotelAccommodationService.addReservation(clientPassportCode,
+                            roomNumber, Timestamp.valueOf(arrival.concat(":00.0")),
                             Timestamp.valueOf(depart.concat(":00.0")), note);
-                    roomController.updateReservation(Long.parseLong(roomId));
-                } catch (SQLException sqlException) {
+                    roomService.updateReservation(roomNumber);
+                } catch (NoSuchElementException | SQLException addException) {
+                    getArrivalText().setText(arrival);
+                    getDepartText().setText(depart);
+                    getNoteTextPane().setText(note);
                     UIManager.put("OptionPane.messageForeground", Color.red);
                     JFrame jFrame = new JFrame();
-                    JOptionPane.showMessageDialog(jFrame, sqlException);
+                    JOptionPane.showMessageDialog(jFrame, addException.getMessage());
                 }
 
                 populateAll();
@@ -505,10 +521,16 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteRoomBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
-                roomController.deleteRoom(id.get().toString());
+                try {
+                    roomService.deleteRoom(id.get().toString());
+                } catch (SQLIntegrityConstraintViolationException constraintException) {
+                    UIManager.put("OptionPane.messageForeground", Color.red);
+                    JFrame jFrame = new JFrame();
+                    JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+                }
 
                 populateAll();
             }
@@ -517,10 +539,10 @@ public class AppWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 var id = Optional.ofNullable(getDeleteReservationBox().getSelectedItem());
-                if (id.isEmpty()){
+                if (id.isEmpty()) {
                     return;
                 }
-                hotelAccommodationController.deleteReservation(id.get().toString());
+                hotelAccommodationService.deleteReservation(id.get().toString());
 
                 populateAll();
             }
@@ -528,7 +550,7 @@ public class AppWindow extends JFrame {
         updateReservationBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                hotelAccommodationController.updateReservation(
+                hotelAccommodationService.updateReservation(
                         getAccommodationId(),
                         Long.parseLong(getUpdateClientAccommodationBox().getSelectedItem().toString()),
                         Long.parseLong(getUpdateRoomAccommodationBox().getSelectedItem().toString()),
@@ -546,13 +568,24 @@ public class AppWindow extends JFrame {
                 if (selectedId.isEmpty()) {
                     return;
                 }
-                var accommodation = hotelAccommodationController.getById(Long.parseLong(selectedId.get().toString()));
+                var accommodation = hotelAccommodationService.getById(Long.parseLong(selectedId.get().toString()));
                 getUpdateClientAccommodationBox().setSelectedItem(accommodation.getClientId());
                 getUpdateRoomAccommodationBox().setSelectedItem(accommodation.getRoomId());
                 getUpdateArrivalText().setText(accommodation.getArrivalDate().toString());
                 getUpdateDepartText().setText(accommodation.getDepartureDate().toString());
                 getUpdateNoteTextPane().setText(accommodation.getNote());
                 setAccommodationId(accommodation.getAccommodationId());
+            }
+        });
+        clientHistoryBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                var passportCode =  Optional.ofNullable(getClientPassportHistoryBox().getSelectedItem());
+                if (passportCode.isEmpty()) {
+                    return;
+                }
+                populateClientHistoryTable(passportCode.get().toString());
+                populateAll();
             }
         });
     }
@@ -567,7 +600,7 @@ public class AppWindow extends JFrame {
 
     private void populateClientsTable() {
         String[] columns = {"Client ID", "Surname", "Name", "Patronymic", "Passport", "Comment"};
-        var clients = clientController.displayClients();
+        var clients = clientService.displayClients();
         /*disable editing in table cells*/
         DefaultTableModel columnModel = new DefaultTableModel() {
             public boolean isCellEditable(int row, int column) {
@@ -581,7 +614,7 @@ public class AppWindow extends JFrame {
 
     private void populateRoomsTable() {
         String[] columns = {"Room ID", "Room Number", "Seats Number", "Comfort", "Price", "Occupied"};
-        var rooms = roomController.displayRooms();
+        var rooms = roomService.displayRooms();
         /*disable editing in table cells*/
         DefaultTableModel columnModel = new DefaultTableModel() {
             public boolean isCellEditable(int row, int column) {
@@ -595,7 +628,7 @@ public class AppWindow extends JFrame {
 
     private void populateAccommodationTable() {
         String[] columns = {"Accommodation ID", "Client ID", "Room ID", "Arrival Date", "Departure Date", "Note"};
-        var accommodationForAllTime = hotelAccommodationController.displayAccommodationForAllTime();
+        var accommodationForAllTime = hotelAccommodationService.displayAccommodationForAllTime();
         /*disable editing in table cells*/
         DefaultTableModel columnModel = new DefaultTableModel() {
             public boolean isCellEditable(int row, int column) {
@@ -625,6 +658,9 @@ public class AppWindow extends JFrame {
             getAccommodationTable().getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
+        for (int i = 0; i < getClientHistoryTable().getColumnCount(); i++) {
+            getClientHistoryTable().getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
 
         getAccommodationTable().getParent().addComponentListener(new ComponentAdapter() {
             @Override
@@ -680,6 +716,7 @@ public class AppWindow extends JFrame {
         populateUpdateBoxes();
         populateDeleteBoxes();
         populateReservationBox();
+        populateClientHistoryBox();
     }
 
     private void populateComfortBox() {
@@ -696,13 +733,13 @@ public class AppWindow extends JFrame {
         getPassportComBox().removeAllItems();
         getRoomNumberComBox().removeAllItems();
         getAccommodationComBox().removeAllItems();
-        for (var p : clientController.getPassportCodes()) {
+        for (var p : clientService.getPassportCodes()) {
             getPassportComBox().addItem(p);
         }
-        for (var r : roomController.getRoomNumbers()) {
+        for (var r : roomService.getRoomNumbers()) {
             getRoomNumberComBox().addItem(r);
         }
-        for (var id : hotelAccommodationController.getListOfId()) {
+        for (var id : hotelAccommodationService.getListOfId()) {
             getAccommodationComBox().addItem(id);
         }
     }
@@ -711,33 +748,55 @@ public class AppWindow extends JFrame {
         getDeleteRoomBox().removeAllItems();
         getDeleteReservationBox().removeAllItems();
         getDeleteClientBox().removeAllItems();
-        for (var id : clientController.getId()) {
+        for (var id : clientService.getId()) {
             getDeleteClientBox().addItem(id);
         }
-        for (var id : roomController.getId()) {
+        for (var id : roomService.getId()) {
             getDeleteRoomBox().addItem(id);
         }
-        for (var id : hotelAccommodationController.getListOfId()) {
+        for (var id : hotelAccommodationService.getListOfId()) {
             getDeleteReservationBox().addItem(id);
         }
     }
 
-    private void populateReservationBox(){
+    private void populateReservationBox() {
         getClientAccommodationBox().removeAllItems();
         getRoomAccommodationBox().removeAllItems();
         getUpdateClientAccommodationBox().removeAllItems();
         getUpdateRoomAccommodationBox().removeAllItems();
-        for (var id : clientController.getId()) {
-            getClientAccommodationBox().addItem(id);
+        for (var passport : clientService.getPassportCodes()) {
+            getClientAccommodationBox().addItem(passport);
         }
-        for (var id : roomController.getFreeRooms()) {
-            getRoomAccommodationBox().addItem(id);
+        for (var roomNumber : roomService.getFreeRooms()) {
+            getRoomAccommodationBox().addItem(roomNumber);
         }
-        for (var id : clientController.getId()) {
+        for (var id : clientService.getId()) {
             getUpdateClientAccommodationBox().addItem(id);
         }
-        for (var id : roomController.getId()) {
+        for (var id : roomService.getId()) {
             getUpdateRoomAccommodationBox().addItem(id);
         }
+    }
+
+    private void populateClientHistoryBox(){
+        getClientPassportHistoryBox().removeAllItems();
+        for (var passport : clientService.getPassportCodes()) {
+            getClientPassportHistoryBox().addItem(passport);
+        }
+    }
+
+    private void populateClientHistoryTable(String passportCode){
+        String[] columns = {"Passport","Surname", "Name", "Patronymic", "Days Spend"};
+        var clientHistory = clientService.getClientHistory(passportCode);
+        /*disable editing in table cells*/
+        DefaultTableModel columnModel = new DefaultTableModel() {
+            public boolean isCellEditable(int row, int column) {
+                return false;//This causes all cells to be not editable
+            }
+
+        };
+        columnModel.setColumnIdentifiers(columns);
+        clientHistory.forEach(columnModel::addRow);
+        getClientHistoryTable().setModel(columnModel);
     }
 }

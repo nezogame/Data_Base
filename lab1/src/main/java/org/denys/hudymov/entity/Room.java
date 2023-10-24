@@ -1,5 +1,6 @@
 package org.denys.hudymov.entity;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,4 +21,5 @@ public class Room {
     private String comfort;
     private String price;
     private Boolean occupied;
+    private List<HotelAccommodation> accommodations;
 }
