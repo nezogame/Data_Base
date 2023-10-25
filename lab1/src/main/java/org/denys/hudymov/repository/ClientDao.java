@@ -8,6 +8,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -232,4 +233,68 @@ public class ClientDao implements Dao<Client> {
         }
         return clientWithDays;
     }
+
+    public List<Client> displayGuestsInTheHotel() {
+        List<Client> clients = new ArrayList<>();
+
+        String selectSQL = "SELECT c.surname, c.name, c.patronymic, c.passport_data, c.comment " +
+                "FROM Clients c " +
+                "WHERE EXISTS ( " +
+                "    SELECT 1 " +
+                "    FROM HotelAccommodations a " +
+                "    WHERE a.client_id = c.client_id " +
+                "    AND a.departure_date > CURRENT_TIMESTAMP " +
+                ")";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                clients.add(
+                        Client
+                                .builder()
+                                .surname(resultSet.getString("surname"))
+                                .name(resultSet.getString("name"))
+                                .patronymic(resultSet.getString("patronymic"))
+                                .passportData(resultSet.getString("passport_data"))
+                                .comment(resultSet.getString("comment"))
+                                .build()
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clients;
+    }
+
+    public Map<Client, Integer> avgDaysAtHotel() {
+        Map<Client, Integer> clientsWithDays = new LinkedHashMap<>();
+
+        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, AVG(DATEDIFF(day, a.arrival_date, a.departure_date)) AS avg_stay_duration " +
+                "FROM Clients c " +
+                "LEFT JOIN HotelAccommodations a ON c.client_id = a.client_id " +
+                "GROUP BY c.passport_data, c.surname, c.name, c.patronymic " +
+                "ORDER BY c.passport_data";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                clientsWithDays.put(
+                        Client
+                                .builder()
+                                .surname(resultSet.getString("surname"))
+                                .name(resultSet.getString("name"))
+                                .patronymic(resultSet.getString("patronymic"))
+                                .passportData(resultSet.getString("passport_data"))
+                                .build(),
+                        resultSet.getInt("avg_stay_duration")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientsWithDays;
+    }
+
 }
