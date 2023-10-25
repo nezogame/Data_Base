@@ -1,19 +1,16 @@
 package org.denys.hudymov.service;
 
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.List;
+import java.util.Vector;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.Client;
-import org.denys.hudymov.mapper.ClientMapper;
-import org.denys.hudymov.model.ClientAndAccommodationDto;
 import org.denys.hudymov.repository.ClientDao;
-
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.List;
-import java.util.Vector;
 
 @Data
 @Builder
@@ -22,7 +19,8 @@ import java.util.Vector;
 @EqualsAndHashCode
 public class ClientService {
     private static final ClientDao CLIENT_DAO = ClientDao.builder().build();
-    public  Vector<Vector<Object>> displayClients(){
+
+    public Vector<Vector<Object>> displayClients() {
         var clientsVector = new Vector<Vector<Object>>();
         var clients = CLIENT_DAO.read();
         clients.forEach(client -> {
@@ -60,8 +58,8 @@ public class ClientService {
     }
 
     public Client getClientByPassport(String passport) {
-        if (passport.isEmpty()){
-            passport=null;
+        if (passport.isEmpty()) {
+            passport = null;
         }
         return CLIENT_DAO.getByPassport(passport).get();
     }
@@ -85,10 +83,40 @@ public class ClientService {
         CLIENT_DAO.delete(Integer.parseInt(id));
     }
 
-    public Vector<Vector<Object>> getClientHistory(String passportCode){
+    public Vector<Vector<Object>> getClientHistory(String passportCode) {
         var clientsVector = new Vector<Vector<Object>>();
         var clients = CLIENT_DAO.getUsersAndDayTheySpendByPassportCode(passportCode);
         clients.forEach((days, client) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(client.getPassportData());
+            row.add(client.getSurname());
+            row.add(client.getName());
+            row.add(client.getPatronymic());
+            row.add(days);
+            clientsVector.add(row);
+        });
+        return clientsVector;
+    }
+
+    public Vector<Vector<Object>> displayGuests() {
+        var clientsVector = new Vector<Vector<Object>>();
+        var clients = CLIENT_DAO.displayGuestsInTheHotel();
+        clients.forEach(client -> {
+            Vector<Object> row = new Vector<>();
+            row.add(client.getSurname());
+            row.add(client.getName());
+            row.add(client.getPatronymic());
+            row.add(client.getPassportData());
+            row.add(client.getComment());
+            clientsVector.add(row);
+        });
+        return clientsVector;
+    }
+
+    public Vector<Vector<Object>> displayAvgStayDuration() {
+        var clientsVector = new Vector<Vector<Object>>();
+        var clients = CLIENT_DAO.avgDaysAtHotel();
+        clients.forEach((client, days) -> {
             Vector<Object> row = new Vector<>();
             row.add(client.getPassportData());
             row.add(client.getSurname());
