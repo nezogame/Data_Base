@@ -1,26 +1,5 @@
 package org.denys.hudymov.gui;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import org.denys.hudymov.service.ClientService;
-import org.denys.hudymov.service.HotelAccommodationService;
-import org.denys.hudymov.service.RoomService;
-import org.denys.hudymov.model.Validator;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.UIManager;
-import javax.swing.table.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,6 +14,28 @@ import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.UIManager;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import org.denys.hudymov.model.Validator;
+import org.denys.hudymov.service.ClientService;
+import org.denys.hudymov.service.HotelAccommodationService;
+import org.denys.hudymov.service.RoomService;
 
 @Getter
 enum Column {
@@ -67,7 +68,7 @@ enum Comfort {
 public class AppWindow extends JFrame {
     private JPanel panel1;
     private JTabbedPane tabbedPane1;
-    private JButton button1;
+    private JButton displayClientsBtn;
     private JButton button3;
     private JButton button4;
     private JPanel crudPanel;
@@ -119,12 +120,20 @@ public class AppWindow extends JFrame {
     private JTextField updateDepartText;
     private JTextPane noteTextPane;
     private JTextPane updateNoteTextPane;
-    private JTable table1;
-    private JTable table3;
-    private JTable table4;
-    private JTable clientHistoryTable;
+    private JTable currentClientsTable;
+    private JTable avgDaysHotelTable;
     private JButton clientHistoryBtn;
+    private JTable roomsPopularityTable;
+    private JButton roomsPopularityBtn;
+    private JTextField findRoomsArrivalDateText;
+    private JButton findSuitableRooms;
+    private JTextField findDaysOfStayText;
+    private JTextField findByPriceText;
+    private JTextField findBySeatsNumberText;
     private JComboBox clientPassportHistoryBox;
+    private JTable suitableRooms;
+    private JTable clientHistoryTable;
+    private JButton calculateAvgDaysBtn;
     private ClientService clientService = ClientService.builder().build();
     private RoomService roomService = RoomService.builder().build();
     private HotelAccommodationService hotelAccommodationService = HotelAccommodationService.builder().build();
@@ -577,16 +586,91 @@ public class AppWindow extends JFrame {
                 setAccommodationId(accommodation.getAccommodationId());
             }
         });
-        clientHistoryBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                var passportCode =  Optional.ofNullable(getClientPassportHistoryBox().getSelectedItem());
-                if (passportCode.isEmpty()) {
-                    return;
-                }
-                populateClientHistoryTable(passportCode.get().toString());
-                populateAll();
+
+        clientHistoryBtn.addActionListener(e -> {
+            var passportCode = Optional.ofNullable(getClientPassportHistoryBox().getSelectedItem());
+            if (passportCode.isEmpty()) {
+                return;
             }
+            populateClientHistoryTable(passportCode.get().toString());
+            populateAll();
+        });
+
+        roomsPopularityBtn.addActionListener(e -> {
+            populateRoomsPopularityTable();
+            populateAll();
+        });
+
+        findSuitableRooms.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var seats = getFindBySeatsNumberText().getText();
+            var price = getFindByPriceText().getText();
+            var arrivalDate = getFindRoomsArrivalDateText().getText();
+            var daysOfStay = getFindDaysOfStayText().getText();
+            try {
+                Validator.validateNumberOfSeats(seats);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(price);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(arrivalDate, "arrival date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+            try {
+                Validator.validateNumberOfSeats(daysOfStay);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getFindBySeatsNumberText().setText("");
+            getFindByPriceText().setText("");
+            getFindRoomsArrivalDateText().setText("Example: 2023-09-19 16:20");
+            getFindDaysOfStayText().setText("");
+
+            populateSuitableRooms(Integer.valueOf(seats), price, arrivalDate, Integer.valueOf(daysOfStay));
+            populateAll();
+        });
+        findRoomsArrivalDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getFindRoomsArrivalDateText().getText().equals("Example: 2023-09-19 16:20")) {
+                    getFindRoomsArrivalDateText().setText("");
+                    getFindRoomsArrivalDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getFindRoomsArrivalDateText().getText().isEmpty()) {
+                    getFindRoomsArrivalDateText().setForeground(Color.GRAY);
+                    getFindRoomsArrivalDateText().setText("Example: 2023-09-19 16:20");
+                }
+            }
+        });
+
+        displayClientsBtn.addActionListener(e -> {
+            populateCurrentClientsTable();
+            populateAll();
+        });
+
+        calculateAvgDaysBtn.addActionListener(e -> {
+            populateAvgDaysTable();
+            populateAll();
         });
     }
 
@@ -598,9 +682,7 @@ public class AppWindow extends JFrame {
         changeColorOfIdColumns();
     }
 
-    private void populateClientsTable() {
-        String[] columns = {"Client ID", "Surname", "Name", "Patronymic", "Passport", "Comment"};
-        var clients = clientService.displayClients();
+    private @NonNull DefaultTableModel disableCellsEditing(String[] columns) {
         /*disable editing in table cells*/
         DefaultTableModel columnModel = new DefaultTableModel() {
             public boolean isCellEditable(int row, int column) {
@@ -608,6 +690,13 @@ public class AppWindow extends JFrame {
             }
         };
         columnModel.setColumnIdentifiers(columns);
+        return columnModel;
+    }
+
+    private void populateClientsTable() {
+        String[] columns = {"Client ID", "Surname", "Name", "Patronymic", "Passport", "Comment"};
+        var clients = clientService.displayClients();
+        var columnModel = disableCellsEditing(columns);
         clients.forEach(columnModel::addRow);
         getClientsTable().setModel(columnModel);
     }
@@ -615,13 +704,7 @@ public class AppWindow extends JFrame {
     private void populateRoomsTable() {
         String[] columns = {"Room ID", "Room Number", "Seats Number", "Comfort", "Price", "Occupied"};
         var rooms = roomService.displayRooms();
-        /*disable editing in table cells*/
-        DefaultTableModel columnModel = new DefaultTableModel() {
-            public boolean isCellEditable(int row, int column) {
-                return false;//This causes all cells to be not editable
-            }
-        };
-        columnModel.setColumnIdentifiers(columns);
+        var columnModel = disableCellsEditing(columns);
         rooms.forEach(columnModel::addRow);
         getRoomsTable().setModel(columnModel);
     }
@@ -629,14 +712,7 @@ public class AppWindow extends JFrame {
     private void populateAccommodationTable() {
         String[] columns = {"Accommodation ID", "Client ID", "Room ID", "Arrival Date", "Departure Date", "Note"};
         var accommodationForAllTime = hotelAccommodationService.displayAccommodationForAllTime();
-        /*disable editing in table cells*/
-        DefaultTableModel columnModel = new DefaultTableModel() {
-            public boolean isCellEditable(int row, int column) {
-                return false;//This causes all cells to be not editable
-            }
-
-        };
-        columnModel.setColumnIdentifiers(columns);
+        var columnModel = disableCellsEditing(columns);
         accommodationForAllTime.forEach(columnModel::addRow);
         getAccommodationTable().setModel(columnModel);
     }
@@ -778,25 +854,52 @@ public class AppWindow extends JFrame {
         }
     }
 
-    private void populateClientHistoryBox(){
+    private void populateClientHistoryBox() {
         getClientPassportHistoryBox().removeAllItems();
         for (var passport : clientService.getPassportCodes()) {
             getClientPassportHistoryBox().addItem(passport);
         }
     }
 
-    private void populateClientHistoryTable(String passportCode){
-        String[] columns = {"Passport","Surname", "Name", "Patronymic", "Days Spend"};
+    private void populateClientHistoryTable(String passportCode) {
+        String[] columns = {"Passport", "Surname", "Name", "Patronymic", "Days Spend"};
         var clientHistory = clientService.getClientHistory(passportCode);
-        /*disable editing in table cells*/
-        DefaultTableModel columnModel = new DefaultTableModel() {
-            public boolean isCellEditable(int row, int column) {
-                return false;//This causes all cells to be not editable
-            }
-
-        };
-        columnModel.setColumnIdentifiers(columns);
+        var columnModel = disableCellsEditing(columns);
         clientHistory.forEach(columnModel::addRow);
         getClientHistoryTable().setModel(columnModel);
     }
+
+    private void populateRoomsPopularityTable() {
+        String[] columns = {"Room №", "Comfort", "Price", "Popularity", "Rank"};
+        var roomsPopularity = roomService.computePopularity();
+        var columnModel = disableCellsEditing(columns);
+        roomsPopularity.forEach(columnModel::addRow);
+        getRoomsPopularityTable().setModel(columnModel);
+    }
+
+    private void populateSuitableRooms(Integer seats_number, String price, String arrival, Integer days) {
+        String[] columns = {"Room №", "Seat Number", "Comfort", "Price"};
+        var arrivalDate = Timestamp.valueOf(arrival.concat(":00.0"));
+        var suitableRooms = roomService.findSuitableRooms(seats_number, price, arrivalDate, days);
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getSuitableRooms().setModel(columnModel);
+    }
+
+    private void populateCurrentClientsTable() {
+        String[] columns = {"Surname", "Name", "Patronymic", "Passport", "Comment"};
+        var suitableRooms = clientService.displayGuests();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getCurrentClientsTable().setModel(columnModel);
+    }
+
+    private void populateAvgDaysTable() {
+        String[] columns = {"Passport", "Surname", "Name", "Patronymic", "Avg Days"};
+        var suitableRooms = clientService.displayAvgStayDuration();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getAvgDaysHotelTable().setModel(columnModel);
+    }
+
 }

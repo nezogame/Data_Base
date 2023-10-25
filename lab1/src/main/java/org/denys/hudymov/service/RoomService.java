@@ -1,5 +1,10 @@
 package org.denys.hudymov.service;
 
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.Vector;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,11 +12,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.Room;
 import org.denys.hudymov.repository.RoomDao;
-
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.List;
-import java.util.Vector;
 
 @Data
 @Builder
@@ -54,7 +54,7 @@ public class RoomService {
     }
 
     public void updateRoom(Long id, String roomNumber, Integer seatsNumber, String comfort, String price,
-                           Boolean occupied)  {
+                           Boolean occupied) {
 
         ROOM_DAO.update(
                 Room.builder()
@@ -86,5 +86,38 @@ public class RoomService {
 
     public void updateReservation(String roomNumber) {
         ROOM_DAO.updateRoomOccupancy(roomNumber);
+    }
+
+    public Vector<Vector<Object>> computePopularity() {
+        var popularRooms = new Vector<Vector<Object>>();
+        var rooms = ROOM_DAO.computePopularity();
+        rooms.forEach((room, pair) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(room.getRoomNumber());
+            row.add(room.getComfort());
+            row.add(room.getPrice() + "$");
+            row.add(pair.getKey());
+            row.add(pair.getValue());
+
+
+            popularRooms.add(row);
+        });
+        return popularRooms;
+    }
+
+    public Vector<Vector<Object>> findSuitableRooms(Integer seats_number, String price,
+                                                    Timestamp arrival, Integer days) {
+
+        var suitableRooms = new Vector<Vector<Object>>();
+        var rooms = ROOM_DAO.findAvailable(seats_number, price, arrival, days);
+        rooms.forEach((room) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(room.getRoomNumber());
+            row.add(room.getSeatsNumber());
+            row.add(room.getComfort());
+            row.add(room.getPrice() + "$");
+            suitableRooms.add(row);
+        });
+        return suitableRooms;
     }
 }

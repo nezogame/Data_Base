@@ -1,5 +1,18 @@
 package org.denys.hudymov.repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javafx.util.Pair;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,16 +20,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.denys.hudymov.entity.Room;
 import org.jetbrains.annotations.NotNull;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Data
 @Builder
@@ -206,10 +209,75 @@ public class RoomDao implements Dao<Room> {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
 
-            preparedStatement.setString(1,roomNumber);
+            preparedStatement.setString(1, roomNumber);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public Map<Room, Pair<Integer, Integer>> computePopularity() {
+        Map<Room, Pair<Integer, Integer>> roomsPopularity = new LinkedHashMap<>();
+        String selectPopularity = "SELECT DISTINCT room_p.room_number, room_p.comfort, room_p.price, popularity, " +
+                "DENSE_RANK() OVER (ORDER BY popularity desc) AS rank " +
+                "FROM ( " +
+                "  SELECT r.room_number, r.comfort, r.price, COUNT(r.room_number) OVER (PARTITION BY r.room_number) AS popularity " +
+                "  FROM Rooms r " +
+                "  INNER JOIN HotelAccommodations accom ON r.room_id = accom.room_id " +
+                ") room_p " +
+                "ORDER BY rank";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectPopularity)) {
+
+            while (resultSet.next()) {
+                roomsPopularity.put(Room
+                                .builder()
+                                .roomNumber(resultSet.getString("room_number"))
+                                .comfort(resultSet.getString("comfort"))
+                                .price(resultSet.getString("price"))
+                                .build(),
+                        new Pair(resultSet.getString("popularity"),
+                                resultSet.getString("rank")));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return roomsPopularity;
+    }
+
+    public List<Room> findAvailable(Integer seats_number, String price, Timestamp arrival_date, Integer days) {
+        List<Room> suitableRooms = new ArrayList();
+        String selectPopularity = "SELECT DISTINCT r.room_number, r.seats_number, r.comfort, r.price " +
+                "FROM rooms r  " +
+                "LEFT JOIN HotelAccommodations a " +
+                "ON r.room_id = a.room_id " +
+                "WHERE r.seats_number >= ? AND r.price <= ? " +
+                " AND (a.departure_date<DATEADD(day,?,?) OR a.arrival_date>?) " +
+                "ORDER BY r.room_number";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectPopularity)) {
+            preparedStatement.setInt(1, seats_number);
+            preparedStatement.setString(2, price);
+            preparedStatement.setInt(3, days);
+            preparedStatement.setTimestamp(4, arrival_date);
+            preparedStatement.setTimestamp(5, arrival_date);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+
+                suitableRooms.add(Room
+                        .builder()
+                        .roomNumber(resultSet.getString("room_number"))
+                        .seatsNumber(resultSet.getInt("seats_number"))
+                        .comfort(resultSet.getString("comfort"))
+                        .price(resultSet.getString("price"))
+                        .build());
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return suitableRooms;
     }
 }
