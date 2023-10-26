@@ -1,17 +1,21 @@
 package org.denys.hudymov.repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.denys.hudymov.entity.*;
-import org.jetbrains.annotations.*;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import org.denys.hudymov.entity.HotelAccommodation;
+import org.denys.hudymov.model.RevenueDto;
+import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder
@@ -30,8 +34,9 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
 
     private final String DELETE_SQL = "DELETE FROM  HotelAccommodations " +
             "WHERE accommodation_id=?";
+
     @Override
-    public void create(HotelAccommodation entity) throws SQLException{
+    public void create(HotelAccommodation entity) throws SQLException {
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement =
                      connection.prepareStatement(INSERT_SQL)) {
@@ -148,4 +153,44 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
         }
         return accommodationsId;
     }
+
+    public List<RevenueDto> FindPercentRevenueGrowth() {
+        List<RevenueDto> revenue = new ArrayList<>();
+        String selectSQL = "SELECT year, month, monthly_revenue, " +
+                "    monthly_revenue/LEAD(monthly_revenue) OVER (ORDER BY year, month)*100 AS percent_growth " +
+                "    FROM ( " +
+                "                    SELECT " +
+                "                            DATEPART(YEAR, a.departure_date) AS year, " +
+                "    DATEPART(MONTH, a.departure_date) AS month, " +
+                "    SUM(r.price) AS monthly_revenue " +
+                "    FROM " +
+                "    HotelAccommodations a " +
+                "    JOIN " +
+                "    Rooms r ON a.room_id = r.room_id " +
+                "    GROUP BY " +
+                "    DATEPART(YEAR, a.departure_date), " +
+                "    DATEPART(MONTH, a.departure_date) " +
+                ") MonthlyRevenue " +
+                "    ORDER BY " +
+                "    year, " +
+                "    month;";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+            while (resultSet.next()) {
+                revenue.add(
+                        RevenueDto.builder()
+                                .year(resultSet.getInt("year"))
+                                .month(resultSet.getInt("month"))
+                                .monthlyRevenue(resultSet.getString("monthly_revenue"))
+                                .percentGrowth(resultSet.getString("percent_growth"))
+                                .build()
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return revenue;
+    }
+
 }
