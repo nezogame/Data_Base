@@ -1,6 +1,7 @@
 package org.denys.hudymov.repository;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,6 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.denys.hudymov.entity.HotelAccommodation;
 import org.denys.hudymov.entity.Room;
 import org.jetbrains.annotations.NotNull;
 
@@ -221,7 +223,8 @@ public class RoomDao implements Dao<Room> {
         String selectPopularity = "SELECT DISTINCT room_p.room_number, room_p.comfort, room_p.price, popularity, " +
                 "DENSE_RANK() OVER (ORDER BY popularity desc) AS rank " +
                 "FROM ( " +
-                "  SELECT r.room_number, r.comfort, r.price, COUNT(r.room_number) OVER (PARTITION BY r.room_number) AS popularity " +
+                "  SELECT r.room_number, r.comfort, r.price, COUNT(r.room_number) " +
+                "    OVER (PARTITION BY r.room_number) AS popularity " +
                 "  FROM Rooms r " +
                 "  INNER JOIN HotelAccommodations accom ON r.room_id = accom.room_id " +
                 ") room_p " +
@@ -248,7 +251,7 @@ public class RoomDao implements Dao<Room> {
     }
 
     public List<Room> findAvailable(Integer seats_number, String price, Timestamp arrival_date, Integer days) {
-        List<Room> suitableRooms = new ArrayList();
+        List<Room> suitableRooms = new ArrayList<>();
         String selectPopularity = "SELECT DISTINCT r.room_number, r.seats_number, r.comfort, r.price " +
                 "FROM rooms r  " +
                 "LEFT JOIN HotelAccommodations a " +
@@ -274,10 +277,128 @@ public class RoomDao implements Dao<Room> {
                         .price(resultSet.getString("price"))
                         .build());
             }
-
+            resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return suitableRooms;
+    }
+
+    public Map<String, Integer> findAvgPriceForComfort() {
+        Map<String, Integer> comfortAndPrice = new LinkedHashMap<>();
+        String selectAvgPrice = "SELECT r.comfort, AVG(r.price) AS avg_price " +
+                "FROM Rooms r " +
+                "GROUP BY r.comfort";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectAvgPrice)) {
+            while (resultSet.next()) {
+                comfortAndPrice.put(
+                        resultSet.getString("comfort"),
+                        resultSet.getInt("avg_price")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return comfortAndPrice;
+    }
+
+    public List<Room> findRoomsOccupiedBetweenDate(Date start, Date end) {
+        List<Room> roomOccupiedBetweenDate = new ArrayList<>();
+        String selectAvgPriceBetweenDate = "SELECT r.room_number, r.seats_number, r.comfort, r.price, " +
+                "   a.arrival_date, a.departure_date " +
+                "FROM HotelAccommodations a " +
+                "JOIN Rooms r ON a.room_id = r.room_id " +
+                "WHERE a.arrival_date >= ? AND a.departure_date <= ?";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectAvgPriceBetweenDate)) {
+
+            preparedStatement.setDate(1, start);
+            preparedStatement.setDate(2, end);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                roomOccupiedBetweenDate.add(
+                        Room.builder()
+                                .roomNumber(resultSet.getString("room_number"))
+                                .seatsNumber(resultSet.getInt("seats_number"))
+                                .comfort(resultSet.getString("comfort"))
+                                .price(resultSet.getString("price"))
+                                .accommodations(List.of(HotelAccommodation.builder()
+                                        .arrivalDate(resultSet.getTimestamp("arrival_date"))
+                                        .departureDate(resultSet.getTimestamp("departure_date"))
+                                        .build()))
+                                .build()
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return roomOccupiedBetweenDate;
+    }
+
+    public Map<Room,Float> findRoomsIncomeInDateRange(Date start, Date end) {
+        Map<Room,Float> roomIncomeInDateRange = new LinkedHashMap<>();
+        String selectRoomIncomeInDateRange = "SELECT r.room_number, r.comfort, r.price, SUM(r.price) AS room_income " +
+                "FROM Rooms r " +
+                "INNER JOIN HotelAccommodations a ON r.room_id = a.room_id " +
+                "WHERE a.arrival_date >= ? AND a.departure_date <= ? " +
+                "GROUP BY r.room_number, r.comfort, r.price " +
+                "ORDER BY r.room_number";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectRoomIncomeInDateRange)) {
+
+            preparedStatement.setDate(1, start);
+            preparedStatement.setDate(2, end);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                roomIncomeInDateRange.put(
+                        Room.builder()
+                                .roomNumber(resultSet.getString("room_number"))
+                                .comfort(resultSet.getString("comfort"))
+                                .price(resultSet.getString("price"))
+                                .build(),
+                        resultSet.getFloat("room_income")
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return roomIncomeInDateRange;
+    }
+
+    public Map<Room,Integer> findRoomsComfortsAndNumberOfStayed  (Integer year) {
+        Map<Room,Integer> roomComfortsAndNumberOfStayed = new LinkedHashMap<>();
+        String selectSQL = "SELECT r.room_number, r.comfort, r.price, COUNT(*) AS booking_count " +
+                "        FROM Rooms r " +
+                "        INNER JOIN HotelAccommodations a ON r.room_id = a.room_id " +
+                "        WHERE DATEPART(YEAR, a.arrival_date) = ? " +
+                "GROUP BY r.room_number, r.comfort, r.price";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL)) {
+
+            preparedStatement.setInt(1, year);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                roomComfortsAndNumberOfStayed.put(
+                        Room.builder()
+                                .roomNumber(resultSet.getString("room_number"))
+                                .comfort(resultSet.getString("comfort"))
+                                .price(resultSet.getString("price"))
+                                .build(),
+                        resultSet.getInt("booking_count")
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return roomComfortsAndNumberOfStayed;
     }
 }

@@ -1,5 +1,6 @@
 package org.denys.hudymov.gui;
 
+import com.itextpdf.text.DocumentException;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -8,6 +9,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.FileNotFoundException;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
@@ -69,8 +72,6 @@ public class AppWindow extends JFrame {
     private JPanel panel1;
     private JTabbedPane tabbedPane1;
     private JButton displayClientsBtn;
-    private JButton button3;
-    private JButton button4;
     private JPanel crudPanel;
     private JTable roomsTable;
     private JTable accommodationTable;
@@ -123,17 +124,36 @@ public class AppWindow extends JFrame {
     private JTable currentClientsTable;
     private JTable avgDaysHotelTable;
     private JButton clientHistoryBtn;
-    private JTable roomsPopularityTable;
     private JButton roomsPopularityBtn;
     private JTextField findRoomsArrivalDateText;
     private JButton findSuitableRooms;
+    private JComboBox clientPassportHistoryBox;
+    private JTable clientHistoryTable;
+    private JButton calculateAvgDaysBtn;
+    private JTable ComfortPriceTable;
+    private JTable clientsStaysTable;
+    private JButton avgPriceComfortBtn;
+    private JTable roomsPopularityTable;
     private JTextField findDaysOfStayText;
     private JTextField findByPriceText;
     private JTextField findBySeatsNumberText;
-    private JComboBox clientPassportHistoryBox;
     private JTable suitableRooms;
-    private JTable clientHistoryTable;
-    private JButton calculateAvgDaysBtn;
+    private JTable clientForLastYearTable;
+    private JButton clientForLastYearButton;
+    private JTable placingBetweenDateTable;
+    private JButton percentRevenueButton;
+    private JButton button4;
+    private JTextField fromDateText;
+    private JTextField toDateText;
+    private JButton findAllPlacingBetweenBtn;
+    private JButton clientsStaysBtn;
+    private JTextField clientsStaysText;
+    private JButton displayRoomsIncomeInButton;
+    private JTextField incomeFromDateText;
+    private JTextField incomeToDateText;
+    private JButton dispalyPlacingInRoomsBtn;
+    private JTextField yearText;
+    private JButton findAllAccommodationBtn;
     private ClientService clientService = ClientService.builder().build();
     private RoomService roomService = RoomService.builder().build();
     private HotelAccommodationService hotelAccommodationService = HotelAccommodationService.builder().build();
@@ -593,12 +613,10 @@ public class AppWindow extends JFrame {
                 return;
             }
             populateClientHistoryTable(passportCode.get().toString());
-            populateAll();
         });
 
         roomsPopularityBtn.addActionListener(e -> {
             populateRoomsPopularityTable();
-            populateAll();
         });
 
         findSuitableRooms.addActionListener(e -> {
@@ -643,7 +661,6 @@ public class AppWindow extends JFrame {
             getFindDaysOfStayText().setText("");
 
             populateSuitableRooms(Integer.valueOf(seats), price, arrivalDate, Integer.valueOf(daysOfStay));
-            populateAll();
         });
         findRoomsArrivalDateText.addFocusListener(new FocusAdapter() {
             @Override
@@ -665,12 +682,224 @@ public class AppWindow extends JFrame {
 
         displayClientsBtn.addActionListener(e -> {
             populateCurrentClientsTable();
-            populateAll();
         });
 
         calculateAvgDaysBtn.addActionListener(e -> {
             populateAvgDaysTable();
-            populateAll();
+        });
+
+        avgPriceComfortBtn.addActionListener(e -> {
+            populateAvgComfortPriceTable();
+        });
+
+        clientForLastYearButton.addActionListener(e -> {
+            populateClientForLastYearTable();
+        });
+        fromDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getFromDateText().getText().equals("Example: 2023-09-19")) {
+                    getFromDateText().setText("");
+                    getFromDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getFromDateText().getText().isEmpty()) {
+                    getFromDateText().setForeground(Color.GRAY);
+                    getFromDateText().setText("Example: 2023-09-19");
+                }
+            }
+        });
+        toDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getToDateText().getText().equals("Example: 2023-10-07")) {
+                    getToDateText().setText("");
+                    getToDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getToDateText().getText().isEmpty()) {
+                    getToDateText().setForeground(Color.GRAY);
+                    getToDateText().setText("Example: 2023-10-07");
+                }
+            }
+        });
+
+        findAllPlacingBetweenBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var fromDate = getFromDateText().getText();
+            var toDate = getToDateText().getText();
+
+            try {
+                Validator.validateTextField(fromDate, "From Date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(toDate, "To Date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getFromDateText().setText("Example: 2023-09-19");
+            getToDateText().setText("Example: 2023-10-07");
+
+            populateSuitableRooms(fromDate, toDate);
+        });
+
+        percentRevenueButton.addActionListener(e -> {
+            try {
+                hotelAccommodationService.percentRevenueGrowthToPdf();
+            } catch (FileNotFoundException | DocumentException ex) {
+                ex.printStackTrace();
+                throw new RuntimeException(ex);
+            }
+        });
+
+        clientsStaysBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var stays = getClientsStaysText().getText();
+
+            try {
+                Validator.validateStays(stays);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getClientsStaysText().setText("");
+            populateClientsByNumberOfHotelStays(Integer.parseInt(stays));
+        });
+        incomeFromDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getIncomeFromDateText().getText().equals("Example: 2023-09-19")) {
+                    getIncomeFromDateText().setText("");
+                    getIncomeFromDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getIncomeFromDateText().getText().isEmpty()) {
+                    getIncomeFromDateText().setForeground(Color.GRAY);
+                    getIncomeFromDateText().setText("Example: 2023-09-19");
+                }
+            }
+        });
+
+        incomeToDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getIncomeToDateText().getText().equals("Example: 2023-10-07")) {
+                    getIncomeToDateText().setText("");
+                    getIncomeToDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getIncomeToDateText().getText().isEmpty()) {
+                    getIncomeToDateText().setForeground(Color.GRAY);
+                    getIncomeToDateText().setText("Example: 2023-10-07");
+                }
+            }
+        });
+
+        displayRoomsIncomeInButton.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var start = getIncomeFromDateText().getText();
+            var end = getIncomeToDateText().getText();
+
+            try {
+                Validator.validateTextField(start, "Income From Date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(end, "Income To Date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getIncomeFromDateText().setText("Example: 2023-09-19");
+            getIncomeToDateText().setText("Example: 2023-10-07");
+            try {
+                roomService.computeRoomIncomeInDateRange(Date.valueOf(start), Date.valueOf(end));
+            } catch (FileNotFoundException | DocumentException ex) {
+                ex.printStackTrace();
+                throw new RuntimeException(ex);
+            }
+        });
+
+        yearText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getYearText().getText().equals("Example: 2023")) {
+                    getYearText().setText("");
+                    getYearText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getYearText().getText().isEmpty()) {
+                    getYearText().setForeground(Color.GRAY);
+                    getYearText().setText("Example: 2023");
+                }
+            }
+        });
+        dispalyPlacingInRoomsBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var year = getYearText().getText();
+
+            try {
+                Validator.validateTextField(year, "Searched Year");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getYearText().setText("");
+            try {
+                roomService.computeRoomsComfortsAndNumberOfStayed(Integer.parseInt(year));
+            } catch (FileNotFoundException | DocumentException ex) {
+                ex.printStackTrace();
+                throw new RuntimeException(ex);
+            }
         });
     }
 
@@ -732,10 +961,6 @@ public class AppWindow extends JFrame {
 
         for (int i = 0; i < getAccommodationTable().getColumnCount(); i++) {
             getAccommodationTable().getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
-
-        for (int i = 0; i < getClientHistoryTable().getColumnCount(); i++) {
-            getClientHistoryTable().getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
         getAccommodationTable().getParent().addComponentListener(new ComponentAdapter() {
@@ -900,6 +1125,41 @@ public class AppWindow extends JFrame {
         var columnModel = disableCellsEditing(columns);
         suitableRooms.forEach(columnModel::addRow);
         getAvgDaysHotelTable().setModel(columnModel);
+    }
+
+    private void populateAvgComfortPriceTable() {
+        String[] columns = {"Comfort", "Price"};
+        var avgPriceForComfort = roomService.computeAvgPriceForComfort();
+        var columnModel = disableCellsEditing(columns);
+        avgPriceForComfort.forEach(columnModel::addRow);
+        getComfortPriceTable().setModel(columnModel);
+    }
+
+    private void populateClientForLastYearTable() {
+        String[] columns = {"Comfort", "Price"};
+        var avgPriceForComfort = clientService.displayClientsPlacementForLastYear();
+        var columnModel = disableCellsEditing(columns);
+        avgPriceForComfort.forEach(columnModel::addRow);
+        getClientForLastYearTable().setModel(columnModel);
+    }
+
+    private void populateSuitableRooms(String startDate, String endDate) {
+        String[] columns = {"Room №", "Seat Number", "Comfort", "Price", "Arrival Date", "Departure Date"};
+        var suitableRooms = roomService.computePriceForComfortBetweenDate(
+                Date.valueOf(startDate),
+                Date.valueOf(endDate)
+        );
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getPlacingBetweenDateTable().setModel(columnModel);
+    }
+
+    private void populateClientsByNumberOfHotelStays(Integer minAccommodation) {
+        String[] columns = {"Passport", "Surname", "Name", "Patronymic", "Comment"};
+        var hotelStays = clientService.displayClientsByNumberOfHotelStays(minAccommodation);
+        var columnModel = disableCellsEditing(columns);
+        hotelStays.forEach(columnModel::addRow);
+        getClientsStaysTable().setModel(columnModel);
     }
 
 }

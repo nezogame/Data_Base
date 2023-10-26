@@ -1,10 +1,20 @@
 package org.denys.hudymov.service;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -119,5 +129,119 @@ public class RoomService {
             suitableRooms.add(row);
         });
         return suitableRooms;
+    }
+
+    public Vector<Vector<Object>> computeAvgPriceForComfort() {
+
+        var pairsComfortAndPrice = new Vector<Vector<Object>>();
+        var rooms = ROOM_DAO.findAvgPriceForComfort();
+        rooms.forEach((comfort, price) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(comfort);
+            row.add(price);
+            pairsComfortAndPrice.add(row);
+        });
+        return pairsComfortAndPrice;
+    }
+
+    public Vector<Vector<Object>> computePriceForComfortBetweenDate(Date start, Date end) {
+
+        var priceForComfort = new Vector<Vector<Object>>();
+        var rooms = ROOM_DAO.findRoomsOccupiedBetweenDate(start, end);
+        rooms.forEach((room) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(room.getRoomNumber());
+            row.add(room.getSeatsNumber());
+            row.add(room.getComfort());
+            row.add(room.getPrice());
+            row.add(room.getAccommodations().get(0).getArrivalDate());
+            row.add(room.getAccommodations().get(0).getDepartureDate());
+            priceForComfort.add(row);
+        });
+        return priceForComfort;
+    }
+
+    public void computeRoomIncomeInDateRange(Date start, Date end) throws FileNotFoundException, DocumentException {
+
+        Document PDFReport = new Document();
+        PdfWriter.getInstance(PDFReport, new FileOutputStream("pdf_room_income_report_from_sql_using_java.pdf"));
+        PDFReport.open();
+
+        PdfPTable reportTable = new PdfPTable(4);
+        AtomicReference<PdfPCell> tableCell = new AtomicReference<>();
+        PdfPCell headerCell;
+
+        headerCell = new PdfPCell(new Phrase("Room Number"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Comfort"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Price"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Room Income"));
+        reportTable.addCell(headerCell);
+
+        final var roomIncome = ROOM_DAO.findRoomsIncomeInDateRange(start, end);
+        roomIncome.forEach((room, income) -> {
+
+            tableCell.set(new PdfPCell(new Phrase(room.getRoomNumber())));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(room.getComfort())));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(room.getPrice() + "$")));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(income + "$")));
+            reportTable.addCell(tableCell.get());
+        });
+        PDFReport.add(reportTable);
+        PDFReport.close();
+    }
+
+    public void computeRoomsComfortsAndNumberOfStayed(Integer year) throws FileNotFoundException, DocumentException {
+
+        Document PDFReport = new Document();
+        PdfWriter.getInstance(PDFReport,
+                new FileOutputStream("pdf_rooms_booking_count_report_from_sql_using_java.pdf")
+        );
+        PDFReport.open();
+
+        PdfPTable reportTable = new PdfPTable(4);
+        AtomicReference<PdfPCell> tableCell = new AtomicReference<>();
+        PdfPCell headerCell;
+
+        headerCell = new PdfPCell(new Phrase("Room Number"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Comfort"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Price"));
+        reportTable.addCell(headerCell);
+
+        headerCell = new PdfPCell(new Phrase("Booking Count"));
+        reportTable.addCell(headerCell);
+
+        final var roomIncome = ROOM_DAO.findRoomsComfortsAndNumberOfStayed(year);
+        roomIncome.forEach((room, booking) -> {
+
+            tableCell.set(new PdfPCell(new Phrase(room.getRoomNumber())));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(room.getComfort())));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(room.getPrice() + "$")));
+            reportTable.addCell(tableCell.get());
+
+            tableCell.set(new PdfPCell(new Phrase(booking.toString())));
+            reportTable.addCell(tableCell.get());
+        });
+        PDFReport.add(reportTable);
+        PDFReport.close();
     }
 }
