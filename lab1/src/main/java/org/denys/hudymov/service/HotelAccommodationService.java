@@ -1,5 +1,20 @@
 package org.denys.hudymov.service;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,12 +24,6 @@ import org.denys.hudymov.entity.HotelAccommodation;
 import org.denys.hudymov.repository.ClientDao;
 import org.denys.hudymov.repository.HotelAccommodationDao;
 import org.denys.hudymov.repository.RoomDao;
-
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Vector;
 
 @Data
 @Builder
@@ -85,5 +94,42 @@ public class HotelAccommodationService {
             throw new IllegalArgumentException("This id " + id + " doesn't exist in the table!");
         }
         return accommodationEntity.get();
+    }
+
+    public void percentRevenueGrowthToPdf() throws FileNotFoundException, DocumentException {
+        DecimalFormat df = new DecimalFormat("0.00%");
+
+        Document PDFReport = new Document();
+        PdfWriter.getInstance(PDFReport, new FileOutputStream("pdf_revenue_report_from_sql_using_java.pdf"));
+        PDFReport.open();
+
+        PdfPTable myReportTable = new PdfPTable(4);
+        AtomicReference<PdfPCell> tableCell = new AtomicReference<>();
+        PdfPCell headerCell;
+
+        headerCell = new PdfPCell(new Phrase("Year"));
+        myReportTable.addCell(headerCell);
+        headerCell = new PdfPCell(new Phrase("Month"));
+        myReportTable.addCell(headerCell);
+        headerCell = new PdfPCell(new Phrase("Monthly Revenue"));
+        myReportTable.addCell(headerCell);
+        headerCell = new PdfPCell(new Phrase("Percent Growth"));
+        myReportTable.addCell(headerCell);
+
+        final var percentRevenueGrowth = HOTEL_ACCOMMODATION_DAO.FindPercentRevenueGrowth();
+        percentRevenueGrowth.forEach(revenue -> {
+
+            tableCell.set(new PdfPCell(new Phrase(revenue.year().toString())));
+            myReportTable.addCell(tableCell.get());
+            tableCell.set(new PdfPCell(new Phrase(revenue.month().toString())));
+            myReportTable.addCell(tableCell.get());
+            tableCell.set(new PdfPCell(new Phrase(revenue.monthlyRevenue().concat("$"))));
+            myReportTable.addCell(tableCell.get());
+            tableCell.set(new PdfPCell(new Phrase(revenue.percentGrowth() != null ? df.format(
+                    Float.parseFloat(revenue.percentGrowth()) / 100) : "NULL")));
+            myReportTable.addCell(tableCell.get());
+        });
+        PDFReport.add(myReportTable);
+        PDFReport.close();
     }
 }
