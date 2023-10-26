@@ -30,7 +30,8 @@ public class ClientDao implements Dao<Client> {
             "INSERT INTO Clients " +
                     "VALUES(?,?,?,?,?)";
 
-    private final String UPDATE_SQL = "UPDATE Clients SET surname=?, name=?, patronymic=?, passport_data=?, comment=? " +
+    private final String UPDATE_SQL = "UPDATE Clients SET surname=?, name=?, " +
+            "patronymic=?, passport_data=?, comment=? " +
             "WHERE client_id=?";
 
     private final String DELETE_SQL = "DELETE FROM  Clients " +
@@ -78,11 +79,11 @@ public class ClientDao implements Dao<Client> {
     @Override
     public Optional<Client> get(long id) {
         Optional<Client> client = Optional.empty();
+        String readSql = "SELECT * FROM Clients " +
+                "WHERE client_id=?";
         try (Connection connection = DataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            String readSql = "SELECT * FROM Clients " +
-                    "WHERE client_id=?";
-            PreparedStatement preparedStatement = connection.prepareStatement(readSql);
+             PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
+
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
             client = Optional.ofNullable(Client
@@ -270,7 +271,8 @@ public class ClientDao implements Dao<Client> {
     public Map<Client, Integer> avgDaysAtHotel() {
         Map<Client, Integer> clientsWithDays = new LinkedHashMap<>();
 
-        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, AVG(DATEDIFF(day, a.arrival_date, a.departure_date)) AS avg_stay_duration " +
+        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, " +
+                "AVG(DATEDIFF(day, a.arrival_date, a.departure_date)) AS avg_stay_duration " +
                 "FROM Clients c " +
                 "LEFT JOIN HotelAccommodations a ON c.client_id = a.client_id " +
                 "GROUP BY c.passport_data, c.surname, c.name, c.patronymic " +
@@ -297,4 +299,67 @@ public class ClientDao implements Dao<Client> {
         return clientsWithDays;
     }
 
+    public Map<Client, Integer> findClientsPlacementForLastYear() {
+        Map<Client, Integer> clientsForLastYear = new HashMap<>();
+
+        String selectQuery = "SELECT c.passport_data, c.surname, c.name, c.patronymic, " +
+                "COUNT(*) AS active_accommodations " +
+                "    FROM Clients c " +
+                "    JOIN HotelAccommodations a ON c.client_id = a.client_id " +
+                "    WHERE a.arrival_date >= DATEADD(YEAR, -1, CURRENT_TIMESTAMP) " +
+                "    GROUP BY c.passport_data, c.client_id, c.surname, c.name, c.patronymic";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectQuery)) {
+
+            while (resultSet.next()) {
+                clientsForLastYear.put(
+                        Client
+                                .builder()
+                                .surname(resultSet.getString("surname"))
+                                .name(resultSet.getString("name"))
+                                .patronymic(resultSet.getString("patronymic"))
+                                .passportData(resultSet.getString("passport_data"))
+                                .build(),
+                        resultSet.getInt("active_accommodations")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientsForLastYear;
+    }
+
+    public List<Client> findClientsByNumberOfHotelStays(Integer minAccommodation) {
+        List<Client> clientsForLastYear = new ArrayList<>();
+
+        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, c.comment  " +
+                "FROM Clients c " +
+                "WHERE ( " +
+                "    SELECT COUNT(*) " +
+                "    FROM HotelAccommodations a " +
+                "    WHERE a.client_id = c.client_id " +
+                ") >= ?";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
+        ) {
+            preparedStatement.setInt(1, minAccommodation);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                clientsForLastYear.add(
+                        Client.builder()
+                                .surname(resultSet.getString("surname"))
+                                .name(resultSet.getString("name"))
+                                .patronymic(resultSet.getString("patronymic"))
+                                .passportData(resultSet.getString("passport_data"))
+                                .comment(resultSet.getString("comment"))
+                                .build()
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientsForLastYear;
+    }
 }
