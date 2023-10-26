@@ -115,8 +115,8 @@ public class ClientService {
 
     public Vector<Vector<Object>> displayAvgStayDuration() {
         var clientsVector = new Vector<Vector<Object>>();
-        var clients = CLIENT_DAO.avgDaysAtHotel();
-        clients.forEach((client, days) -> {
+        var clientsStayDuration = CLIENT_DAO.avgDaysAtHotel();
+        clientsStayDuration.forEach((client, days) -> {
             Vector<Object> row = new Vector<>();
             row.add(client.getPassportData());
             row.add(client.getSurname());
@@ -127,4 +127,35 @@ public class ClientService {
         });
         return clientsVector;
     }
+
+    public Vector<Vector<Object>> displayClientsPlacementForLastYear() {
+        var clientsVector = new Vector<Vector<Object>>();
+        var clientsForLastYear = CLIENT_DAO.findClientsPlacementForLastYear();
+        clientsForLastYear.forEach((client, activeAccommodation) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(client.getPassportData());
+            row.add(client.getSurname());
+            row.add(client.getName());
+            row.add(client.getPatronymic());
+            row.add(activeAccommodation);
+            clientsVector.add(row);
+        });
+        return clientsVector;
+    }
+
+    public Vector<Vector<Object>> displayClientsByNumberOfHotelStays(Integer minAccommodation) {
+        var clientsVector = new Vector<Vector<Object>>();
+        var clients = CLIENT_DAO.findClientsByNumberOfHotelStays(minAccommodation);
+        clients.forEach((client) -> {
+            Vector<Object> row = new Vector<>();
+            row.add(client.getPassportData());
+            row.add(client.getSurname());
+            row.add(client.getName());
+            row.add(client.getPatronymic());
+            row.add(client.getComment());
+            clientsVector.add(row);
+        });
+        return clientsVector;
+    }
+
 }
