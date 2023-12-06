@@ -257,7 +257,7 @@ public class RoomDao implements Dao<Room> {
                 "LEFT JOIN HotelAccommodations a " +
                 "ON r.room_id = a.room_id " +
                 "WHERE r.seats_number >= ? AND r.price <= ? " +
-                " AND (a.departure_date<DATEADD(day,?,?) OR a.arrival_date>?) " +
+                " AND (a.departure_date<?+? OR a.arrival_date>?) " +
                 "ORDER BY r.room_number";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectPopularity)) {
@@ -377,7 +377,7 @@ public class RoomDao implements Dao<Room> {
         String selectSQL = "SELECT r.room_number, r.comfort, r.price, COUNT(*) AS booking_count " +
                 "        FROM Rooms r " +
                 "        INNER JOIN HotelAccommodations a ON r.room_id = a.room_id " +
-                "        WHERE DATEPART(YEAR, a.arrival_date) = ? " +
+                "        WHERE EXTRACT(YEAR FROM a.departure_date) = ? " +
                 "GROUP BY r.room_number, r.comfort, r.price";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectSQL)) {

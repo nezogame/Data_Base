@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import org.denys.hudymov.entity.Client;
 import org.jetbrains.annotations.NotNull;
@@ -26,28 +27,50 @@ import org.jetbrains.annotations.NotNull;
 @ToString
 @EqualsAndHashCode
 public class ClientDao implements Dao<Client> {
-    private final String INSERT_SQL =
-            "INSERT INTO Clients " +
-                    "VALUES(?,?,?,?,?)";
+    private final String INSERT_PERSON_SQL =
+            "INSERT INTO People VALUES(?,?,?,?)";
+    private final String INSERT_CLIENT_SQL =
+            "INSERT INTO Clients(passport_data, user_comment) VALUES(?,?)";
 
-    private final String UPDATE_SQL = "UPDATE Clients SET surname=?, name=?, " +
-            "patronymic=?, passport_data=?, comment=? " +
-            "WHERE client_id=?";
+    private final String UPDATE_PERSON_SQL =
+            "UPDATE People SET surname=?, name=?,patronymic=?\n" +
+            "WHERE passport_data=?";
+
+    private final String UPDATE_CLIENT_SQL=
+            "UPDATE Clients SET user_comment=?\n" +
+            "WHERE passport_data=?";
 
     private final String DELETE_SQL = "DELETE FROM  Clients " +
             "WHERE client_id=?";
 
     @Override
     public void create(Client entity) throws SQLException {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement =
-                     connection.prepareStatement(INSERT_SQL)) {
+        var connection = DataSource.getConnection();
+        var commit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement(INSERT_PERSON_SQL)) {
 
-            setParameters(preparedStatement, entity);
+            preparedStatement.setString(1, entity.getPassportData());
+            preparedStatement.setString(2, entity.getSurname());
+            preparedStatement.setString(3, entity.getName());
+            preparedStatement.setString(4, entity.getPatronymic());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new SQLException();
         }
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement(INSERT_CLIENT_SQL)) {
+
+            preparedStatement.setString(1, entity.getPassportData());
+            preparedStatement.setString(2, entity.getComment());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException();
+        }
+        connection.commit();
+        connection.setAutoCommit(commit);
+        connection.close();
     }
 
     @Override
@@ -56,7 +79,10 @@ public class ClientDao implements Dao<Client> {
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement()) {
 
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM Clients");
+            ResultSet resultSet = statement.executeQuery(
+                    "SELECT * FROM clients C " +
+                            "INNER JOIN people P ON C.passport_data = P.passport_data"
+            );
             while (resultSet.next()) {
                 Client client = Client
                         .builder()
@@ -65,7 +91,7 @@ public class ClientDao implements Dao<Client> {
                         .name(resultSet.getString("name"))
                         .patronymic(resultSet.getString("patronymic"))
                         .passportData(resultSet.getString("passport_data"))
-                        .comment(resultSet.getString("comment"))
+                        .comment(resultSet.getString("user_comment"))
                         .build();
                 clients.add(client);
             }
@@ -93,7 +119,7 @@ public class ClientDao implements Dao<Client> {
                     .name(resultSet.getString("name"))
                     .patronymic(resultSet.getString("patronymic"))
                     .passportData(resultSet.getString("passport_data"))
-                    .comment(resultSet.getString("comment"))
+                    .comment(resultSet.getString("user_comment"))
                     .build());
 
             resultSet.close();
@@ -103,17 +129,33 @@ public class ClientDao implements Dao<Client> {
         return client;
     }
 
+    @SneakyThrows
     @Override
     public void update(Client entity) {
-        try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_SQL)) {
+        var connection = DataSource.getConnection();
+        var commit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_PERSON_SQL)) {
 
-            setParameters(preparedStatement, entity);
-            preparedStatement.setLong(6, entity.getClientId());
+            preparedStatement.setString(1, entity.getSurname());
+            preparedStatement.setString(2, entity.getName());
+            preparedStatement.setString(3, entity.getPatronymic());
+            preparedStatement.setString(4, entity.getPassportData());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_CLIENT_SQL)) {
+
+            preparedStatement.setString(1, entity.getComment());
+            preparedStatement.setString(2, entity.getPassportData());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        connection.commit();
+        connection.setAutoCommit(commit);
     }
 
     @Override
@@ -126,14 +168,6 @@ public class ClientDao implements Dao<Client> {
         } catch (SQLException e) {
             throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
-    }
-
-    private void setParameters(@NotNull PreparedStatement preparedStatement, @NotNull Client entity) throws SQLException {
-        preparedStatement.setString(1, entity.getSurname());
-        preparedStatement.setString(2, entity.getName());
-        preparedStatement.setString(3, entity.getPatronymic());
-        preparedStatement.setString(4, entity.getPassportData());
-        preparedStatement.setString(5, entity.getComment());
     }
 
     public List<Long> getAllId() {
@@ -175,7 +209,8 @@ public class ClientDao implements Dao<Client> {
     public Optional<Client> getByPassport(String passport) {
         Optional<Client> client = Optional.empty();
         try (Connection connection = DataSource.getConnection()) {
-            String SelectQuery = "SELECT * FROM Clients WHERE passport_data=?";
+            String SelectQuery = "SELECT * FROM Clients C " +
+                                 "INNER JOIN people P ON C.passport_data = P.passport_data  WHERE C.passport_data=?";
             PreparedStatement preparedStatement =
                     connection.prepareStatement(SelectQuery);
             preparedStatement.setString(1, passport);
@@ -189,7 +224,7 @@ public class ClientDao implements Dao<Client> {
                         .name(resultSet.getString("name"))
                         .patronymic(resultSet.getString("patronymic"))
                         .passportData(resultSet.getString("passport_data"))
-                        .comment(resultSet.getString("comment"))
+                        .comment(resultSet.getString("user_comment"))
                         .build());
             }
 
@@ -204,11 +239,13 @@ public class ClientDao implements Dao<Client> {
     public Map<Integer, Client> getUsersAndDayTheySpendByPassportCode(String code) {
         Map<Integer, Client> clientWithDays = new HashMap<>();
 
-        String selectQuery = "SELECT c.passport_data, c.name, c.surname, c.patronymic, " +
-                "DateDiff(dd, accom.arrival_date,accom.departure_date) as days_spend " +
-                "FROM Clients as c " +
-                "INNER JOIN HotelAccommodations as accom " +
+        String selectQuery = "SELECT c.passport_data, p.name, p.surname, p.patronymic, " +
+                "TRUNC(accom.departure_date) - TRUNC(accom.arrival_date) as days_spend " +
+                "FROM Clients c " +
+                "INNER JOIN HotelAccommodations accom " +
                 "ON c.client_id = accom.client_id " +
+                "INNER JOIN People p " +
+                "ON c.passport_data = p.passport_data " +
                 "WHERE c.passport_data = ?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
@@ -238,13 +275,16 @@ public class ClientDao implements Dao<Client> {
     public List<Client> displayGuestsInTheHotel() {
         List<Client> clients = new ArrayList<>();
 
-        String selectSQL = "SELECT c.surname, c.name, c.patronymic, c.passport_data, c.comment " +
+        String selectSQL = "SELECT p.surname, p.name, p.patronymic, c.passport_data, c.user_comment " +
                 "FROM Clients c " +
+                "INNER JOIN People p " +
+                "ON c.passport_data = p.passport_data "+
                 "WHERE EXISTS ( " +
                 "    SELECT 1 " +
                 "    FROM HotelAccommodations a " +
                 "    WHERE a.client_id = c.client_id " +
                 "    AND a.departure_date > CURRENT_TIMESTAMP " +
+                "    AND a.arrival_date < CURRENT_TIMESTAMP" +
                 ")";
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement();
@@ -258,7 +298,7 @@ public class ClientDao implements Dao<Client> {
                                 .name(resultSet.getString("name"))
                                 .patronymic(resultSet.getString("patronymic"))
                                 .passportData(resultSet.getString("passport_data"))
-                                .comment(resultSet.getString("comment"))
+                                .comment(resultSet.getString("user_comment"))
                                 .build()
                 );
             }
@@ -271,11 +311,13 @@ public class ClientDao implements Dao<Client> {
     public Map<Client, Integer> avgDaysAtHotel() {
         Map<Client, Integer> clientsWithDays = new LinkedHashMap<>();
 
-        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, " +
-                "AVG(DATEDIFF(day, a.arrival_date, a.departure_date)) AS avg_stay_duration " +
+        String selectSQL = "SELECT c.passport_data, p.surname, p.name, p.patronymic, " +
+                "AVG(TRUNC(a.departure_date)-TRUNC(a.arrival_date)) AS avg_stay_duration " +
                 "FROM Clients c " +
                 "LEFT JOIN HotelAccommodations a ON c.client_id = a.client_id " +
-                "GROUP BY c.passport_data, c.surname, c.name, c.patronymic " +
+                "INNER JOIN People p " +
+                "ON c.passport_data = p.passport_data " +
+                "GROUP BY c.passport_data, p.surname, p.name, p.patronymic " +
                 "ORDER BY c.passport_data";
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement();
@@ -302,12 +344,14 @@ public class ClientDao implements Dao<Client> {
     public Map<Client, Integer> findClientsPlacementForLastYear() {
         Map<Client, Integer> clientsForLastYear = new HashMap<>();
 
-        String selectQuery = "SELECT c.passport_data, c.surname, c.name, c.patronymic, " +
+        String selectQuery = "SELECT c.passport_data, p.surname, p.name, p.patronymic, " +
                 "COUNT(*) AS active_accommodations " +
                 "    FROM Clients c " +
                 "    JOIN HotelAccommodations a ON c.client_id = a.client_id " +
-                "    WHERE a.arrival_date >= DATEADD(YEAR, -1, CURRENT_TIMESTAMP) " +
-                "    GROUP BY c.passport_data, c.client_id, c.surname, c.name, c.patronymic";
+                "    INNER JOIN People p " +
+                "    ON c.passport_data = p.passport_data" +
+                "    WHERE a.arrival_date >= ADD_MONTHS(SYSTIMESTAMP, -12) " +
+                "    GROUP BY c.passport_data, c.client_id, p.surname, p.name, p.patronymic";
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(selectQuery)) {
@@ -333,8 +377,10 @@ public class ClientDao implements Dao<Client> {
     public List<Client> findClientsByNumberOfHotelStays(Integer minAccommodation) {
         List<Client> clientsForLastYear = new ArrayList<>();
 
-        String selectSQL = "SELECT c.passport_data, c.surname, c.name, c.patronymic, c.comment  " +
+        String selectSQL = "SELECT c.passport_data, p.surname, p.name, p.patronymic, c.user_comment  " +
                 "FROM Clients c " +
+                "INNER JOIN People p " +
+                "ON c.passport_data = p.passport_data "+
                 "WHERE ( " +
                 "    SELECT COUNT(*) " +
                 "    FROM HotelAccommodations a " +
@@ -352,7 +398,7 @@ public class ClientDao implements Dao<Client> {
                                 .name(resultSet.getString("name"))
                                 .patronymic(resultSet.getString("patronymic"))
                                 .passportData(resultSet.getString("passport_data"))
-                                .comment(resultSet.getString("comment"))
+                                .comment(resultSet.getString("user_comment"))
                                 .build()
                 );
             }

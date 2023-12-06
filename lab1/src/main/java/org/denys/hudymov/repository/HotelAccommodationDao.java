@@ -157,23 +157,16 @@ public class HotelAccommodationDao implements Dao<HotelAccommodation> {
     public List<RevenueDto> FindPercentRevenueGrowth() {
         List<RevenueDto> revenue = new ArrayList<>();
         String selectSQL = "SELECT year, month, monthly_revenue, " +
-                "    monthly_revenue/LEAD(monthly_revenue) OVER (ORDER BY year, month)*100 AS percent_growth " +
+                "    (monthly_revenue / lead(monthly_revenue) OVER (ORDER BY year, month)) * 100 AS percent_growth " +
                 "    FROM ( " +
-                "                    SELECT " +
-                "                            DATEPART(YEAR, a.departure_date) AS year, " +
-                "    DATEPART(MONTH, a.departure_date) AS month, " +
-                "    SUM(r.price) AS monthly_revenue " +
-                "    FROM " +
-                "    HotelAccommodations a " +
-                "    JOIN " +
-                "    Rooms r ON a.room_id = r.room_id " +
-                "    GROUP BY " +
-                "    DATEPART(YEAR, a.departure_date), " +
-                "    DATEPART(MONTH, a.departure_date) " +
+                "       SELECT EXTRACT(YEAR FROM a.departure_date) AS year, " +
+                "              EXTRACT(MONTH FROM a.departure_date) AS month," +
+                "              SUM(r.price) AS monthly_revenue " +
+                "    FROM HotelAccommodations a " +
+                "    JOIN Rooms r ON a.room_id = r.room_id " +
+                "    GROUP BY EXTRACT(YEAR FROM a.departure_date), EXTRACT(MONTH FROM a.departure_date) " +
                 ") MonthlyRevenue " +
-                "    ORDER BY " +
-                "    year, " +
-                "    month;";
+                "    ORDER BY year, month";
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(selectSQL)) {

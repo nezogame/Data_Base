@@ -111,7 +111,6 @@ public class AppWindow extends JFrame {
     private JButton updateReservationBtn;
     private JButton addReservationBtn;
     private JTextPane updateCommentTextPane;
-    private JTextField updatePassportCodeText;
     private JTextField updatePatronymicText;
     private JTextField updateNameText;
     private JTextField updateSurnameText;
@@ -158,6 +157,7 @@ public class AppWindow extends JFrame {
     private RoomService roomService = RoomService.builder().build();
     private HotelAccommodationService hotelAccommodationService = HotelAccommodationService.builder().build();
     private long clintId;
+    private String clientPassport;
     private long roomId;
     private long accommodationId;
 
@@ -410,7 +410,7 @@ public class AppWindow extends JFrame {
                 getUpdateSurnameText().setText(client.getSurname());
                 getUpdateNameText().setText(client.getName());
                 getUpdatePatronymicText().setText(client.getPatronymic());
-                getUpdatePassportCodeText().setText(client.getPassportData());
+                setClientPassport(client.getPassportData());
                 getUpdateCommentTextPane().setText(client.getComment());
                 setClintId(client.getClientId());
             }
@@ -424,7 +424,7 @@ public class AppWindow extends JFrame {
                         getUpdateSurnameText().getText(),
                         getUpdateNameText().getText(),
                         getUpdatePatronymicText().getText(),
-                        getUpdatePassportCodeText().getText(),
+                        getClientPassport(),
                         getUpdateCommentTextPane().getText());
 
                 populateAll();
@@ -534,13 +534,20 @@ public class AppWindow extends JFrame {
                             roomNumber, Timestamp.valueOf(arrival.concat(":00.0")),
                             Timestamp.valueOf(depart.concat(":00.0")), note);
                     roomService.updateReservation(roomNumber);
-                } catch (NoSuchElementException | SQLException addException) {
+                 } catch (NoSuchElementException | SQLException addException ) {
                     getArrivalText().setText(arrival);
                     getDepartText().setText(depart);
                     getNoteTextPane().setText(note);
                     UIManager.put("OptionPane.messageForeground", Color.red);
                     JFrame jFrame = new JFrame();
                     JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+                }catch ( IllegalArgumentException argumentException){
+                    getArrivalText().setText(arrival);
+                    getDepartText().setText(depart);
+                    getNoteTextPane().setText(note);
+                    UIManager.put("OptionPane.messageForeground", Color.red);
+                    JFrame jFrame = new JFrame();
+                    JOptionPane.showMessageDialog(jFrame, "Format must be yyyy-mm-dd hh:mm");
                 }
 
                 populateAll();
@@ -852,7 +859,7 @@ public class AppWindow extends JFrame {
             getIncomeFromDateText().setText("Example: 2023-09-19");
             getIncomeToDateText().setText("Example: 2023-10-07");
             try {
-                roomService.computeRoomIncomeInDateRange(Date.valueOf(start), Date.valueOf(end));
+                roomService.computeRoomIncomeInDateRange(Date.valueOf(start.trim()), Date.valueOf(end.trim()));
             } catch (FileNotFoundException | DocumentException ex) {
                 ex.printStackTrace();
                 throw new RuntimeException(ex);
@@ -1136,7 +1143,7 @@ public class AppWindow extends JFrame {
     }
 
     private void populateClientForLastYearTable() {
-        String[] columns = {"Comfort", "Price"};
+        String[] columns = {"Passport", "Surname", "Name", "Patronymic", "Active accommodation"};
         var avgPriceForComfort = clientService.displayClientsPlacementForLastYear();
         var columnModel = disableCellsEditing(columns);
         avgPriceForComfort.forEach(columnModel::addRow);
@@ -1146,8 +1153,8 @@ public class AppWindow extends JFrame {
     private void populateSuitableRooms(String startDate, String endDate) {
         String[] columns = {"Room №", "Seat Number", "Comfort", "Price", "Arrival Date", "Departure Date"};
         var suitableRooms = roomService.computePriceForComfortBetweenDate(
-                Date.valueOf(startDate),
-                Date.valueOf(endDate)
+                Date.valueOf(startDate.trim()),
+                Date.valueOf(endDate.trim())
         );
         var columnModel = disableCellsEditing(columns);
         suitableRooms.forEach(columnModel::addRow);
