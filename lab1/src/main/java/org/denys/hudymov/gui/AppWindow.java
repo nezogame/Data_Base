@@ -39,6 +39,9 @@ import org.denys.hudymov.model.Validator;
 import org.denys.hudymov.service.ClientService;
 import org.denys.hudymov.service.HotelAccommodationService;
 import org.denys.hudymov.service.RoomService;
+import org.denys.hudymov.service.ServicesCategoryService;
+import org.denys.hudymov.service.ServicesService;
+import org.denys.hudymov.service.StaffService;
 
 @Getter
 enum Column {
@@ -150,12 +153,52 @@ public class AppWindow extends JFrame {
     private JButton displayRoomsIncomeInButton;
     private JTextField incomeFromDateText;
     private JTextField incomeToDateText;
-    private JButton dispalyPlacingInRoomsBtn;
+    private JButton displayPlacingInRoomsBtn;
     private JTextField yearText;
+    private JPanel Manager;
+    private JTextField employeeNameText;
+    private JTextField updateEmployeeNameText;
+    private JTextField employeeEmailText;
+    private JTextField updateEmployeeEmailText;
+    private JTextField updateEmploymentDateText;
+    private JTextField employmentDateText;
+    private JTextField salaryText;
+    private JTextField updateSalaryText;
+    private JComboBox employeeIdBox;
+    private JComboBox deleteEmployeeIdBox;
+    private JButton deleteEmployeeBtn;
+    private JButton updateEmployeeBtn;
+    private JButton addEmployeeBtn;
+    private JTextField categoryText;
+    private JTextField updateCategoryText;
+    private JTextPane descriptionTextPane;
+    private JTextPane updateDescriptionTextPane;
+    private JComboBox categoryBox;
+    private JComboBox deleteCategoryBox;
+    private JButton deleteCategoryBtn;
+    private JButton updateCategoryBtn;
+    private JButton addCategoryBtn;
+    private JTextField serviceText;
+    private JTextField updateServiceText;
+    private JTextField servicePriceText;
+    private JTextField updateServicePriceText;
+    private JComboBox serviceCategoryBox;
+    private JComboBox updateServiceCategoryBox;
+    private JButton addServiceBtn;
+    private JButton updateServiceBtn;
+    private JButton deleteServiceBtn;
+    private JComboBox serviceBox;
+    private JComboBox updatesServiceBox;
+    private JTable servicesCategoryTable;
+    private JTable stuffTable;
+    private JTable servicesTable;
     private JButton findAllAccommodationBtn;
     private ClientService clientService = ClientService.builder().build();
     private RoomService roomService = RoomService.builder().build();
     private HotelAccommodationService hotelAccommodationService = HotelAccommodationService.builder().build();
+    private ServicesService servicesService = ServicesService.builder().build();
+    private ServicesCategoryService categoryService = ServicesCategoryService.builder().build();
+    private StaffService staffService = StaffService.builder().build();
     private long clintId;
     private String clientPassport;
     private long roomId;
@@ -883,7 +926,7 @@ public class AppWindow extends JFrame {
                 }
             }
         });
-        dispalyPlacingInRoomsBtn.addActionListener(e -> {
+        displayPlacingInRoomsBtn.addActionListener(e -> {
             StringBuilder exception = new StringBuilder();
             var year = getYearText().getText();
 
@@ -914,6 +957,9 @@ public class AppWindow extends JFrame {
         populateClientsTable();
         populateRoomsTable();
         populateAccommodationTable();
+        populateServicesTableTable();
+        populateServicesCategoryTableTable();
+        populateStaffTableTable();
         render();
         changeColorOfIdColumns();
     }
@@ -951,6 +997,30 @@ public class AppWindow extends JFrame {
         var columnModel = disableCellsEditing(columns);
         accommodationForAllTime.forEach(columnModel::addRow);
         getAccommodationTable().setModel(columnModel);
+    }
+
+    private void populateServicesTableTable() {
+        String[] columns = {"Category", "Description"};
+        var categories = categoryService.displayCategory();
+        var columnModel = disableCellsEditing(columns);
+        categories.forEach(columnModel::addRow);
+        getServicesTable().setModel(columnModel);
+    }
+
+    private void populateServicesCategoryTableTable() {
+        String[] columns = {"Service Name","Price", "Category"};
+        var categories = servicesService.displayServices();
+        var columnModel = disableCellsEditing(columns);
+        categories.forEach(columnModel::addRow);
+        getServicesCategoryTable().setModel(columnModel);
+    }
+
+    private void populateStaffTableTable() {
+        String[] columns = {"Staff ID","Name","Email","Salary","Employment Date"};
+        var categories = staffService.displayStaff();
+        var columnModel = disableCellsEditing(columns);
+        categories.forEach(columnModel::addRow);
+        getStuffTable().setModel(columnModel);
     }
 
     private void render() {
@@ -1011,6 +1081,7 @@ public class AppWindow extends JFrame {
             case "Accommodation ID" -> {
                 getAccommodationTable().getColumn(columnName).setCellRenderer(cellRenderer);
             }
+            default -> {}
         }
     }
 
