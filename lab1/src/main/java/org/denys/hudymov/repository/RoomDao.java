@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 public class RoomDao implements Dao<Room> {
 
     private final String INSERT_SQL =
-            "INSERT INTO Rooms " +
+            "INSERT INTO Rooms (room_number, seats_number, comfort, price, occupied) " +
                     "VALUES(?,?,?,?,?)";
     private final String UPDATE_SQL = "Update Rooms " +
             "SET room_number=?, seats_number=?, comfort=?, price=?, occupied=? " +

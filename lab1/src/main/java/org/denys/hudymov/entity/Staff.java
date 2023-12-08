@@ -1,6 +1,6 @@
 package org.denys.hudymov.entity;
 
-import java.sql.Timestamp;
+import java.sql.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +18,6 @@ public class Staff {
     private Long staffId;
     private String name;
     private String salary;
-    private Timestamp employmentDate;
+    private Date employmentDate;
     private String email;
-
 }
