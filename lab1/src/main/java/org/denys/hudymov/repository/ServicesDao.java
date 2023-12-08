@@ -78,19 +78,20 @@ public class ServicesDao implements Dao<Services>{
     public Optional<Services> get(String id) {
         Optional<Services> services = Optional.empty();
         String readSql = "SELECT * FROM Services " +
-                "WHERE category=?";
+                "WHERE service_name=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
 
             preparedStatement.setString(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            services = Optional.ofNullable(Services
-                    .builder()
-                    .serviceName(resultSet.getString("service_name"))
-                    .price(resultSet.getString("price"))
-                    .category(resultSet.getString("categories"))
-                    .build());
-
+            if (resultSet.next()) {
+                services = Optional.ofNullable(Services
+                        .builder()
+                        .serviceName(resultSet.getString("service_name"))
+                        .price(resultSet.getString("price"))
+                        .category(resultSet.getString("category"))
+                        .build());
+            }
             resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -126,5 +127,23 @@ public class ServicesDao implements Dao<Services>{
         } catch (SQLException e) {
             throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
+    }
+
+    public List<String> getAllId() {
+        List<String> servicesId = new ArrayList<>();
+        String selectSQL = "SELECT service_name FROM Services " +
+                "ORDER BY service_name";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                servicesId.add(resultSet.getString("service_name"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesId;
     }
 }
