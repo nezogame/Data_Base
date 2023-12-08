@@ -70,7 +70,9 @@ public class ServicesCategoryDao implements Dao<ServicesCategory> {
     }
 
     @Override
-    public Optional<ServicesCategory> get(long id) {return Optional.empty();}
+    public Optional<ServicesCategory> get(long id) {
+        return Optional.empty();
+    }
 
 
     public Optional<ServicesCategory> get(String id) {
@@ -83,12 +85,13 @@ public class ServicesCategoryDao implements Dao<ServicesCategory> {
 
             preparedStatement.setString(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            servicesCategory = Optional.ofNullable(ServicesCategory
-                    .builder()
-                    .category(resultSet.getString("category"))
-                    .description(resultSet.getString("description"))
-                    .build());
-
+            if (resultSet.next()) {
+                servicesCategory = Optional.ofNullable(ServicesCategory
+                        .builder()
+                        .category(resultSet.getString("category"))
+                        .description(resultSet.getString("description"))
+                        .build());
+            }
             resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -124,5 +127,23 @@ public class ServicesCategoryDao implements Dao<ServicesCategory> {
         } catch (SQLException e) {
             throw new SQLIntegrityConstraintViolationException(e.getMessage());
         }
+    }
+
+    public List<String> getAllId() {
+        List<String> servicesId = new ArrayList<>();
+        String selectSQL = "SELECT category FROM ServicesCategory " +
+                "ORDER BY category";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                servicesId.add(resultSet.getString("category"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesId;
     }
 }
