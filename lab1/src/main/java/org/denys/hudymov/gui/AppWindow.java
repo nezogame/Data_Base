@@ -188,9 +188,9 @@ public class AppWindow extends JFrame {
     private JButton updateServiceBtn;
     private JButton deleteServiceBtn;
     private JComboBox serviceBox;
-    private JComboBox updatesServiceBox;
+    private JComboBox deleteServiceBox;
     private JTable servicesCategoryTable;
-    private JTable stuffTable;
+    private JTable staffTable;
     private JTable servicesTable;
     private JButton findAllAccommodationBtn;
     private ClientService clientService = ClientService.builder().build();
@@ -203,6 +203,7 @@ public class AppWindow extends JFrame {
     private String clientPassport;
     private long roomId;
     private long accommodationId;
+    private long staffId;
 
     public AppWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -577,14 +578,14 @@ public class AppWindow extends JFrame {
                             roomNumber, Timestamp.valueOf(arrival.concat(":00.0")),
                             Timestamp.valueOf(depart.concat(":00.0")), note);
                     roomService.updateReservation(roomNumber);
-                 } catch (NoSuchElementException | SQLException addException ) {
+                } catch (NoSuchElementException | SQLException addException) {
                     getArrivalText().setText(arrival);
                     getDepartText().setText(depart);
                     getNoteTextPane().setText(note);
                     UIManager.put("OptionPane.messageForeground", Color.red);
                     JFrame jFrame = new JFrame();
                     JOptionPane.showMessageDialog(jFrame, addException.getMessage());
-                }catch ( IllegalArgumentException argumentException){
+                } catch (IllegalArgumentException argumentException) {
                     getArrivalText().setText(arrival);
                     getDepartText().setText(depart);
                     getNoteTextPane().setText(note);
@@ -951,6 +952,459 @@ public class AppWindow extends JFrame {
                 throw new RuntimeException(ex);
             }
         });
+        employeeNameText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getEmployeeNameText().getText().equals("Example: John")) {
+                    getEmployeeNameText().setText("");
+                    getEmployeeNameText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getEmployeeNameText().getText().isEmpty()) {
+                    getEmployeeNameText().setForeground(Color.GRAY);
+                    getEmployeeNameText().setText("Example: John");
+                }
+            }
+        });
+        employeeEmailText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getEmployeeEmailText().getText().equals("Example: John@gmail.com")) {
+                    getEmployeeEmailText().setText("");
+                    getEmployeeEmailText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getEmployeeEmailText().getText().isEmpty()) {
+                    getEmployeeEmailText().setForeground(Color.GRAY);
+                    getEmployeeEmailText().setText("Example: John@gmail.com");
+                }
+            }
+        });
+        employmentDateText.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (getEmploymentDateText().getText().equals("Example: 2023-09-19")) {
+                    getEmploymentDateText().setText("");
+                    getEmploymentDateText().setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (getEmploymentDateText().getText().isEmpty()) {
+                    getEmploymentDateText().setForeground(Color.GRAY);
+                    getEmploymentDateText().setText("Example: 2023-09-19");
+                }
+            }
+        });
+
+        addEmployeeBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var name = getEmployeeNameText().getText();
+            var email = getEmployeeEmailText().getText();
+            var employmentDate = getEmploymentDateText().getText();
+            var salary = getSalaryText().getText();
+
+            try {
+                Validator.validateTextField(name, "employee name");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(email, "employee email");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(employmentDate, "employment date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(salary);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                getEmployeeNameText().setText("Example: John");
+                getEmployeeEmailText().setText("Example: John@gmail.com");
+                getEmploymentDateText().setText("Example: 2023-09-19");
+                getSalaryText().setText("");
+                staffService.addStaff(name, email, Date.valueOf(employmentDate.trim()), salary);
+
+            } catch (NoSuchElementException | SQLException addException) {
+                getEmployeeNameText().setText(name);
+                getEmployeeEmailText().setText(email);
+                getEmploymentDateText().setText(employmentDate);
+                getSalaryText().setText(salary);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            } catch (IllegalArgumentException argumentException) {
+                getEmployeeNameText().setText(name);
+                getEmployeeEmailText().setText(email);
+                getEmploymentDateText().setText(employmentDate);
+                getSalaryText().setText(salary);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, "Format must be yyyy-mm-dd");
+            }
+
+            populateAll();
+        });
+
+        employeeIdBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                var selectedStaffId = Optional.ofNullable(getEmployeeIdBox().getSelectedItem());
+                if (selectedStaffId.isEmpty()) {
+                    return;
+                }
+                var staff = staffService.getStaffById(Long.parseLong(selectedStaffId.get().toString()));
+                getUpdateEmployeeNameText().setText(staff.getName());
+                getUpdateEmployeeEmailText().setText(staff.getEmail());
+                getUpdateEmploymentDateText().setText(staff.getEmploymentDate().toString());
+                getUpdateSalaryText().setText(staff.getSalary());
+                setStaffId(staff.getStaffId());
+            }
+        });
+
+        updateEmployeeBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var name = getUpdateEmployeeNameText().getText();
+            var email = getUpdateEmployeeEmailText().getText();
+            var employmentDate = getUpdateEmploymentDateText().getText();
+            var salary = getUpdateSalaryText().getText();
+
+            try {
+                Validator.validateTextField(name, "employee name");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(email, "employee email");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(employmentDate, "employment date");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(salary);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                staffService.updateStaff(getStaffId(), name, email, Date.valueOf(employmentDate.trim()), salary);
+
+            } catch (NoSuchElementException addException) {
+                getEmployeeNameText().setText(name);
+                getEmployeeEmailText().setText(email);
+                getEmploymentDateText().setText(employmentDate);
+                getSalaryText().setText(salary);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            } catch (IllegalArgumentException argumentException) {
+                getEmployeeNameText().setText(name);
+                getEmployeeEmailText().setText(email);
+                getEmploymentDateText().setText(employmentDate);
+                getSalaryText().setText(salary);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, "Format must be yyyy-mm-dd");
+            }
+
+            populateAll();
+        });
+
+        deleteEmployeeBtn.addActionListener(e -> {
+            var id = Optional.ofNullable(getDeleteEmployeeIdBox().getSelectedItem());
+            if (id.isEmpty()) {
+                return;
+            }
+            try {
+                staffService.deleteStaff(id.get().toString());
+            } catch (SQLIntegrityConstraintViolationException constraintException) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        addCategoryBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var category = getCategoryText().getText();
+            var description = getDescriptionTextPane().getText();
+
+
+            try {
+                Validator.validateTextField(category, "category");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(description, "description");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                getCategoryText().setText("");
+                getDescriptionTextPane().setText("");
+                categoryService.addCategory(category, description);
+
+            } catch (NoSuchElementException | SQLException addException) {
+                getCategoryText().setText(category);
+                getDescriptionTextPane().setText(description);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        updateCategoryBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var category = getUpdateCategoryText().getText();
+            var description = getUpdateDescriptionTextPane().getText();
+
+            try {
+                Validator.validateTextField(category, "category");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(description, "description");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                getUpdateCategoryText().setText("");
+                getUpdateDescriptionTextPane().setText("");
+                categoryService.updateCategory(category, description);
+
+            } catch (NoSuchElementException addException) {
+                getUpdateCategoryText().setText(category);
+                getUpdateDescriptionTextPane().setText(description);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        deleteCategoryBtn.addActionListener(e -> {
+            var id = Optional.ofNullable(getDeleteCategoryBox().getSelectedItem());
+            if (id.isEmpty()) {
+                return;
+            }
+            try {
+                categoryService.deleteCategory(id.get().toString());
+            } catch (SQLIntegrityConstraintViolationException constraintException) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        addServiceBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var service = getServiceText().getText();
+            var price = getServicePriceText().getText();
+            var category = getServiceCategoryBox().getSelectedItem().toString();
+
+
+            try {
+                Validator.validateTextField(service, "service name");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(price);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(category, "service category");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                getServiceText().setText("");
+                getServicePriceText().setText("");
+                getServiceCategoryBox().setSelectedItem("");
+                servicesService.addService(service, price, category);
+
+            } catch (NoSuchElementException | SQLException addException) {
+                getServiceText().setText(service);
+                getServicePriceText().setText(price);
+                getServiceCategoryBox().setSelectedItem(category);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        updateServiceBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+
+            var service = getUpdateServiceText().getText();
+            var price = getUpdateServicePriceText().getText();
+            var category = getUpdateServiceCategoryBox().getSelectedItem().toString();
+
+
+            try {
+                Validator.validateTextField(service, "service name");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validatePrice(price);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            try {
+                Validator.validateTextField(category, "service category");
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            try {
+                getUpdateServiceText().setText("");
+                getUpdateServicePriceText().setText("");
+                getUpdateServiceCategoryBox().setSelectedItem("");
+                servicesService.updateService(service, price, category);
+
+            } catch (NoSuchElementException addException) {
+                getUpdateServiceText().setText(service);
+                getUpdateServicePriceText().setText(price);
+                getUpdateServiceCategoryBox().setSelectedItem(category);
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, addException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        deleteServiceBtn.addActionListener(e -> {
+            var id = Optional.ofNullable(getDeleteServiceBox().getSelectedItem());
+            if (id.isEmpty()) {
+                return;
+            }
+            try {
+                servicesService.deleteService(id.get().toString());
+            } catch (SQLIntegrityConstraintViolationException constraintException) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, constraintException.getMessage());
+            }
+
+            populateAll();
+        });
+
+        categoryBox.addActionListener(e -> {
+            var selectedCategory = Optional.ofNullable(getCategoryBox().getSelectedItem());
+            if (selectedCategory.isEmpty()) {
+                return;
+            }
+            var category = categoryService.getCategoryById(selectedCategory.get().toString());
+
+            getUpdateCategoryText().setText(category.getCategory());
+            getUpdateDescriptionTextPane().setText(category.getDescription());
+        });
+
+        serviceBox.addActionListener(e -> {
+            var selectedService = Optional.ofNullable(getServiceBox().getSelectedItem());
+            if (selectedService.isEmpty()) {
+                return;
+            }
+            var service = servicesService.getServiceById(selectedService.get().toString());
+
+            getUpdateServiceText().setText(service.getServiceName());
+            getUpdateServicePriceText().setText(service.getPrice());
+            getUpdateServiceCategoryBox().setSelectedItem(service.getCategory());
+        });
     }
 
     private void populateTables() {
@@ -1000,27 +1454,27 @@ public class AppWindow extends JFrame {
     }
 
     private void populateServicesTableTable() {
-        String[] columns = {"Category", "Description"};
-        var categories = categoryService.displayCategory();
+        String[] columns = {"Service Name", "Price", "Category"};
+        var categories = servicesService.displayServices();
         var columnModel = disableCellsEditing(columns);
         categories.forEach(columnModel::addRow);
         getServicesTable().setModel(columnModel);
     }
 
     private void populateServicesCategoryTableTable() {
-        String[] columns = {"Service Name","Price", "Category"};
-        var categories = servicesService.displayServices();
+        String[] columns = {"Category", "Description"};
+        var categories = categoryService.displayCategory();
         var columnModel = disableCellsEditing(columns);
         categories.forEach(columnModel::addRow);
         getServicesCategoryTable().setModel(columnModel);
     }
 
     private void populateStaffTableTable() {
-        String[] columns = {"Staff ID","Name","Email","Salary","Employment Date"};
+        String[] columns = {"Staff ID", "Name", "Email", "Salary", "Employment Date"};
         var categories = staffService.displayStaff();
         var columnModel = disableCellsEditing(columns);
         categories.forEach(columnModel::addRow);
-        getStuffTable().setModel(columnModel);
+        getStaffTable().setModel(columnModel);
     }
 
     private void render() {
@@ -1081,7 +1535,8 @@ public class AppWindow extends JFrame {
             case "Accommodation ID" -> {
                 getAccommodationTable().getColumn(columnName).setCellRenderer(cellRenderer);
             }
-            default -> {}
+            default -> {
+            }
         }
     }
 
@@ -1095,7 +1550,10 @@ public class AppWindow extends JFrame {
         populateUpdateBoxes();
         populateDeleteBoxes();
         populateReservationBox();
+        populateCategoryBox();
         populateClientHistoryBox();
+        populateManagerUpdateBoxes();
+        populateManagerDeleteBoxes();
     }
 
     private void populateComfortBox() {
@@ -1138,6 +1596,36 @@ public class AppWindow extends JFrame {
         }
     }
 
+    private void populateManagerUpdateBoxes() {
+        getEmployeeIdBox().removeAllItems();
+        getCategoryBox().removeAllItems();
+        getServiceBox().removeAllItems();
+        for (var id : staffService.getIdList()) {
+            getEmployeeIdBox().addItem(id);
+        }
+        for (var id : categoryService.getIdList()) {
+            getCategoryBox().addItem(id);
+        }
+        for (var id : servicesService.getIdList()) {
+            getServiceBox().addItem(id);
+        }
+    }
+
+    private void populateManagerDeleteBoxes() {
+        getDeleteEmployeeIdBox().removeAllItems();
+        getDeleteCategoryBox().removeAllItems();
+        getDeleteServiceBox().removeAllItems();
+        for (var id : staffService.getIdList()) {
+            getDeleteEmployeeIdBox().addItem(id);
+        }
+        for (var id : categoryService.getIdList()) {
+            getDeleteCategoryBox().addItem(id);
+        }
+        for (var id : servicesService.getIdList()) {
+            getDeleteServiceBox().addItem(id);
+        }
+    }
+
     private void populateReservationBox() {
         getClientAccommodationBox().removeAllItems();
         getRoomAccommodationBox().removeAllItems();
@@ -1154,6 +1642,13 @@ public class AppWindow extends JFrame {
         }
         for (var id : roomService.getId()) {
             getUpdateRoomAccommodationBox().addItem(id);
+        }
+    }
+
+    private void populateCategoryBox() {
+        for (var category : categoryService.getIdList()) {
+            getServiceCategoryBox().addItem(category);
+            getUpdateServiceCategoryBox().addItem(category);
         }
     }
 
