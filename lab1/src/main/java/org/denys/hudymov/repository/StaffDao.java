@@ -22,12 +22,12 @@ import org.denys.hudymov.entity.Staff;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class StaffDao implements Dao<Staff>{
+public class StaffDao implements Dao<Staff> {
 
     private final String INSERT_SQL =
             "INSERT INTO Staff(name,salary,employment_date,email) VALUES(?,?,?,?)";
 
-    private final String UPDATE_SQL=
+    private final String UPDATE_SQL =
             "UPDATE Staff SET name=?,salary=?,employment_date=?,email=?" +
                     "WHERE staff_id=?";
 
@@ -42,7 +42,7 @@ public class StaffDao implements Dao<Staff>{
 
             preparedStatement.setString(1, entity.getName());
             preparedStatement.setString(2, entity.getSalary());
-            preparedStatement.setTimestamp(3, entity.getEmploymentDate());
+            preparedStatement.setDate(3, entity.getEmploymentDate());
             preparedStatement.setString(4, entity.getEmail());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -63,7 +63,7 @@ public class StaffDao implements Dao<Staff>{
                         .staffId(resultSet.getLong("staff_id"))
                         .name(resultSet.getString("name"))
                         .salary(resultSet.getString("salary"))
-                        .employmentDate(resultSet.getTimestamp("employment_date"))
+                        .employmentDate(resultSet.getDate("employment_date"))
                         .email(resultSet.getString("email"))
                         .build();
                 servicesCategories.add(services);
@@ -79,20 +79,22 @@ public class StaffDao implements Dao<Staff>{
     public Optional<Staff> get(long id) {
         Optional<Staff> services = Optional.empty();
         String readSql = "SELECT * FROM Staff " +
-                "WHERE category=?";
+                "WHERE staff_id=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
 
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            services = Optional.ofNullable(Staff
-                    .builder()
-                    .name(resultSet.getString("name"))
-                    .salary(resultSet.getString("salary"))
-                    .email(resultSet.getString("employment_date"))
-                    .email(resultSet.getString("email"))
-                    .build());
-
+            if (resultSet.next()) {
+                services = Optional.ofNullable(Staff
+                        .builder()
+                        .staffId(resultSet.getLong("staff_id"))
+                        .name(resultSet.getString("name"))
+                        .salary(resultSet.getString("salary"))
+                        .employmentDate(resultSet.getDate("employment_date"))
+                        .email(resultSet.getString("email"))
+                        .build());
+            }
             resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -108,7 +110,7 @@ public class StaffDao implements Dao<Staff>{
 
             preparedStatement.setString(1, entity.getName());
             preparedStatement.setString(2, entity.getSalary());
-            preparedStatement.setTimestamp(3, entity.getEmploymentDate());
+            preparedStatement.setDate(3, entity.getEmploymentDate());
             preparedStatement.setString(4, entity.getEmail());
 
             preparedStatement.executeUpdate();
@@ -129,4 +131,21 @@ public class StaffDao implements Dao<Staff>{
         }
     }
 
+    public List<Long> getAllId() {
+        List<Long> staffId = new ArrayList<>();
+        String selectSQL = "SELECT staff_id FROM Staff " +
+                "ORDER BY staff_id";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(selectSQL)) {
+
+            while (resultSet.next()) {
+                staffId.add(resultSet.getLong("staff_id"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return staffId;
+    }
 }
