@@ -4,7 +4,6 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Vector;
 import lombok.Builder;
 import lombok.Data;
@@ -23,18 +22,18 @@ public class StaffService {
     private static final StaffDao STAFF_DAO = StaffDao.builder().build();
 
     public Vector<Vector<Object>> displayStaff() {
-        var clientsVector = new Vector<Vector<Object>>();
-        var clients = STAFF_DAO.read();
-        clients.forEach(emp -> {
+        var staffVector = new Vector<Vector<Object>>();
+        var staff = STAFF_DAO.read();
+        staff.forEach(emp -> {
             Vector<Object> row = new Vector<>();
             row.add(emp.getStaffId());
             row.add(emp.getName());
             row.add(emp.getEmail());
             row.add(emp.getSalary() != null ? emp.getSalary() + "$" : "NULL");
             row.add(emp.getEmploymentDate());
-            clientsVector.add(row);
+            staffVector.add(row);
         });
-        return clientsVector;
+        return staffVector;
     }
 
     public void addStaff(String name, String email, Date employmentDate, String salary) throws SQLException {
@@ -70,5 +69,20 @@ public class StaffService {
 
     public void deleteStaff(String id) throws SQLIntegrityConstraintViolationException {
         STAFF_DAO.delete(Integer.parseInt(id));
+    }
+
+    public Vector<Vector<Object>> staffHiredMonthAgo(Integer month) {
+        var staffVector = new Vector<Vector<Object>>();
+        var staff = STAFF_DAO.staffHiredMonthAgo(month);
+        staff.forEach(emp -> {
+            Vector<Object> row = new Vector<>();
+            row.add(emp.getStaffId());
+            row.add(emp.getName());
+            row.add(emp.getSalary() != null ? emp.getSalary() + "$" : "NULL");
+            row.add(emp.getEmploymentDate());
+            row.add(emp.getEmail());
+            staffVector.add(row);
+        });
+        return staffVector;
     }
 }
