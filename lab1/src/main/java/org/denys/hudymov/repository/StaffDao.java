@@ -148,4 +148,40 @@ public class StaffDao implements Dao<Staff> {
         }
         return staffId;
     }
+
+    /**
+     *
+     * @param month it is amount of month that will be subtracted from current time
+     * @return Hired staff last N month (N is month parameter)
+     */
+    public List<Staff> staffHiredMonthAgo(Integer month) {
+        List<Staff> hiredStaff = new ArrayList<>();
+        String staffHiredMonthAgo =
+                "SELECT *\n" +
+                "FROM Staff\n" +
+                "WHERE employment_date >= add_months(TRUNC(SYSDATE, 'MONTH'), -?)\n" +
+                "AND employment_date < TRUNC(SYSDATE, 'MONTH')";
+        try (Connection connection = DataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(staffHiredMonthAgo)) {
+
+            preparedStatement.setInt(1, month);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                hiredStaff.add(
+                        Staff.builder()
+                                .staffId(resultSet.getLong("staff_id"))
+                                .name(resultSet.getString("name"))
+                                .salary(resultSet.getString("salary"))
+                                .employmentDate(resultSet.getDate("employment_date"))
+                                .email(resultSet.getString("email"))
+                                .build()
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return hiredStaff;
+    }
 }
