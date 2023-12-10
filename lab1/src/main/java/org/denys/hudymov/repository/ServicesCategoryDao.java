@@ -146,4 +146,29 @@ public class ServicesCategoryDao implements Dao<ServicesCategory> {
         }
         return servicesId;
     }
+
+    public List<ServicesCategory> findCategoriesWithoutServices() {
+        List<ServicesCategory> servicesCategories = new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+
+            ResultSet resultSet = statement.executeQuery(
+                    "SELECT sc.Category, sc.description\n" +
+                    "FROM ServicesCategory sc\n" +
+                    "LEFT JOIN Services s ON sc.Category = s.category\n" +
+                    "WHERE s.category IS NULL");
+            while (resultSet.next()) {
+                ServicesCategory servicesCategory = ServicesCategory
+                        .builder()
+                        .category(resultSet.getString("category"))
+                        .description(resultSet.getString("description"))
+                        .build();
+                servicesCategories.add(servicesCategory);
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesCategories;
+    }
 }

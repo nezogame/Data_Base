@@ -22,15 +22,15 @@ public class ServicesCategoryService {
     private static final ServicesCategoryDao SERVICES_CATEGORY_DAO = ServicesCategoryDao.builder().build();
 
     public Vector<Vector<Object>> displayCategory() {
-        var clientsVector = new Vector<Vector<Object>>();
-        var clients = SERVICES_CATEGORY_DAO.read();
-        clients.forEach(category -> {
+        var categoriesVector = new Vector<Vector<Object>>();
+        var categories = SERVICES_CATEGORY_DAO.read();
+        categories.forEach(category -> {
             Vector<Object> row = new Vector<>();
             row.add(category.getCategory());
             row.add(category.getDescription());
-            clientsVector.add(row);
+            categoriesVector.add(row);
         });
-        return clientsVector;
+        return categoriesVector;
     }
 
     public List<String> getIdList() {
@@ -61,5 +61,17 @@ public class ServicesCategoryService {
 
     public ServicesCategory getCategoryById(String id) {
         return SERVICES_CATEGORY_DAO.get(id).get();
+    }
+
+    public Vector<Vector<Object>> displayCategoriesWithoutServices() {
+        var categoriesVector = new Vector<Vector<Object>>();
+        var categories = SERVICES_CATEGORY_DAO.findCategoriesWithoutServices();
+        categories.forEach(category -> {
+            Vector<Object> row = new Vector<>();
+            row.add(category.getCategory());
+            row.add(category.getDescription());
+            categoriesVector.add(row);
+        });
+        return categoriesVector;
     }
 }

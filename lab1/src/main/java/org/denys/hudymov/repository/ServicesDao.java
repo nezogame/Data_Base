@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
@@ -145,5 +147,78 @@ public class ServicesDao implements Dao<Services>{
             e.printStackTrace();
         }
         return servicesId;
+    }
+
+    public List<Services> findServicesWithinCategory() {
+        List<Services> servicesCategories = new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+
+            ResultSet resultSet = statement.executeQuery("SELECT sc.Category, s.service_name, s.price\n" +
+                    "FROM Services s\n" +
+                    "JOIN ServicesCategory sc ON s.category = sc.Category\n" +
+                    "ORDER BY sc.Category, s.price desc");
+            while (resultSet.next()) {
+                Services services = Services
+                        .builder()
+                        .serviceName(resultSet.getString("service_name"))
+                        .category(resultSet.getString("category"))
+                        .price(resultSet.getString("price"))
+                        .build();
+                servicesCategories.add(services);
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesCategories;
+    }
+
+    public List<Services> findPricesAboveAvg() {
+        List<Services> servicesCategories = new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+
+            ResultSet resultSet = statement.executeQuery(
+                    "SELECT *\n" +
+                    "FROM Services\n" +
+                    "WHERE price > (SELECT AVG(price) FROM Services)");
+            while (resultSet.next()) {
+                Services services = Services
+                        .builder()
+                        .serviceName(resultSet.getString("service_name"))
+                        .category(resultSet.getString("category"))
+                        .price(resultSet.getString("price"))
+                        .build();
+                servicesCategories.add(services);
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesCategories;
+    }
+
+    public Map<String,Float> findServicesInEachCategory() {
+        Map<String,Float> servicesInEachCategory = new LinkedHashMap<>();
+        String selectServicesInEachCategory = "SELECT sc.Category, COUNT(*) AS ServiceCount\n" +
+                "FROM Services s\n" +
+                "JOIN ServicesCategory sc ON s.category = sc.Category\n" +
+                "GROUP BY sc.Category";
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectServicesInEachCategory);
+
+            while (resultSet.next()) {
+                servicesInEachCategory.put(
+                        resultSet.getString("category"),
+                        resultSet.getFloat("ServiceCount")
+                );
+            }
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return servicesInEachCategory;
     }
 }

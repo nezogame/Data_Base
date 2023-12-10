@@ -21,16 +21,16 @@ public class ServicesService {
     private static final ServicesDao SERVICES_DAO = ServicesDao.builder().build();
 
     public Vector<Vector<Object>> displayServices() {
-        var clientsVector = new Vector<Vector<Object>>();
-        var clients = SERVICES_DAO.read();
-        clients.forEach(service -> {
+        var serviceVector = new Vector<Vector<Object>>();
+        var service = SERVICES_DAO.read();
+        service.forEach(s -> {
             Vector<Object> row = new Vector<>();
-            row.add(service.getServiceName());
-            row.add(service.getPrice() != null ? service.getPrice() + "$" : "NULL");
-            row.add(service.getCategory());
-            clientsVector.add(row);
+            row.add(s.getServiceName());
+            row.add(s.getPrice() != null ? s.getPrice() + "$" : "NULL");
+            row.add(s.getCategory());
+            serviceVector.add(row);
         });
-        return clientsVector;
+        return serviceVector;
     }
 
     public List<String> getIdList() {
@@ -63,5 +63,43 @@ public class ServicesService {
 
     public Services getServiceById(String id) {
         return SERVICES_DAO.get(id).get();
+    }
+
+    public Vector<Vector<Object>> displayServicesWithinCategory() {
+        var serviceVector = new Vector<Vector<Object>>();
+        var service = SERVICES_DAO.findServicesWithinCategory();
+        service.forEach(s -> {
+            Vector<Object> row = new Vector<>();
+            row.add(s.getCategory());
+            row.add(s.getServiceName());
+            row.add(s.getPrice()+"$");
+            serviceVector.add(row);
+        });
+        return serviceVector;
+    }
+
+    public Vector<Vector<Object>> displayPricesAboveAvg() {
+        var serviceVector = new Vector<Vector<Object>>();
+        var service = SERVICES_DAO.findPricesAboveAvg();
+        service.forEach(s -> {
+            Vector<Object> row = new Vector<>();
+            row.add(s.getServiceName());
+            row.add(s.getPrice()+"$");
+            row.add(s.getCategory());
+            serviceVector.add(row);
+        });
+        return serviceVector;
+    }
+
+    public Vector<Vector<Object>> displayServicesInEachCategory() {
+        var serviceVector = new Vector<Vector<Object>>();
+        var service = SERVICES_DAO.findServicesInEachCategory();
+        service.forEach((category, serviceCount)  -> {
+            Vector<Object> row = new Vector<>();
+            row.add(category);
+            row.add(serviceCount);
+            serviceVector.add(row);
+        });
+        return serviceVector;
     }
 }

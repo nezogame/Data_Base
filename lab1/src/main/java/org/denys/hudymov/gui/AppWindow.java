@@ -192,6 +192,17 @@ public class AppWindow extends JFrame {
     private JTable servicesCategoryTable;
     private JTable staffTable;
     private JTable servicesTable;
+    private JTable categoriesWithoutServicesTable;
+    private JTable servicesInEachCategoryTable;
+    private JTable pricesAboveAvgTable;
+    private JTable hiredStaffTable;
+    private JTable servicesWithinCategoryTable;
+    private JTextField monthAgoText;
+    private JButton hiredStaffBtn;
+    private JButton servicesWithinCategoryBtn;
+    private JButton categoriesWithoutServicesBtn;
+    private JButton servicesInEachCategoryBtn;
+    private JButton pricesAboveAvgBtn;
     private JButton findAllAccommodationBtn;
     private ClientService clientService = ClientService.builder().build();
     private RoomService roomService = RoomService.builder().build();
@@ -1405,6 +1416,42 @@ public class AppWindow extends JFrame {
             getUpdateServicePriceText().setText(service.getPrice());
             getUpdateServiceCategoryBox().setSelectedItem(service.getCategory());
         });
+
+        servicesWithinCategoryBtn.addActionListener(e -> {
+            populateServicesWithinCategoryTable();
+        });
+
+        pricesAboveAvgBtn.addActionListener(e -> {
+            populatePricesAboveAvgTable();
+        });
+        servicesInEachCategoryBtn.addActionListener(e -> {
+            populateServicesInEachCategoryTable();
+        });
+
+        categoriesWithoutServicesBtn.addActionListener(e -> {
+            populateCategoriesWithoutServicesTable();
+        });
+
+        hiredStaffBtn.addActionListener(e -> {
+            StringBuilder exception = new StringBuilder();
+            var month = getMonthAgoText().getText();
+
+            try {
+                Validator.validatePositiveNumber(month);
+            } catch (IllegalArgumentException argException) {
+                exception.append(argException.getMessage()).append("\n");
+            }
+
+            if (!exception.isEmpty()) {
+                UIManager.put("OptionPane.messageForeground", Color.red);
+                JFrame jFrame = new JFrame();
+                JOptionPane.showMessageDialog(jFrame, exception);
+                return;
+            }
+
+            getClientsStaysText().setText("");
+            populateHiredStaffTable(Integer.parseInt(month));
+        });
     }
 
     private void populateTables() {
@@ -1735,4 +1782,43 @@ public class AppWindow extends JFrame {
         getClientsStaysTable().setModel(columnModel);
     }
 
+    private void populateHiredStaffTable(Integer month) {
+        String[] columns = {"Staff id", "Name", "Salary", "Employment Date", "Email"};
+        var hiredStaff = staffService.staffHiredMonthAgo(month);
+        var columnModel = disableCellsEditing(columns);
+        hiredStaff.forEach(columnModel::addRow);
+        getHiredStaffTable().setModel(columnModel);
+    }
+
+    private void populateServicesWithinCategoryTable() {
+        String[] columns = {"Category", "Service Name", "Price"};
+        var suitableRooms = servicesService.displayServicesWithinCategory();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getServicesWithinCategoryTable().setModel(columnModel);
+    }
+
+    private void populatePricesAboveAvgTable() {
+        String[] columns = {"Service Name", "Price", "Category"};
+        var suitableRooms = servicesService.displayPricesAboveAvg();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getPricesAboveAvgTable().setModel(columnModel);
+    }
+
+    private void populateServicesInEachCategoryTable() {
+        String[] columns = {"Category", "Service Count"};
+        var suitableRooms = servicesService.displayServicesInEachCategory();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getServicesInEachCategoryTable().setModel(columnModel);
+    }
+
+    private void populateCategoriesWithoutServicesTable() {
+        String[] columns = {"Category", "Description"};
+        var suitableRooms = categoryService.displayCategoriesWithoutServices();
+        var columnModel = disableCellsEditing(columns);
+        suitableRooms.forEach(columnModel::addRow);
+        getCategoriesWithoutServicesTable().setModel(columnModel);
+    }
 }

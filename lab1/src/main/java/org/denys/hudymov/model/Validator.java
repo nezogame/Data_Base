@@ -36,4 +36,10 @@ public class Validator {
             throw new IllegalArgumentException("The price must be greater than 0!");
         }
     }
+
+    public static void validatePositiveNumber(String positiveNumber) throws IllegalArgumentException {
+        if (positiveNumber.isEmpty() || Integer.parseInt(positiveNumber) < 0) {
+            throw new IllegalArgumentException("The number must be equals or greater than 0!");
+        }
+    }
 }
