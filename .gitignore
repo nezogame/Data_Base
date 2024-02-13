@@ -60,7 +60,7 @@ jmx.log
 derby.log
 
 # Gradle artifacts
-.gradle
+/*.gradle
 .gradletasknamecache
 /build
 buildSrc/build
@@ -86,3 +86,9 @@ spring-*/src/main/java/META-INF/MANIFEST.MF
 Database_diagrma.drawio - draw.io_files
 .$Database_diagrma.*
 Database_diagrma.*
+
+/*/gradlew
+/*/gradlew.bat
+/*/*.gradle
+/*/gradle/wrapper/
+/*/.gitignore
