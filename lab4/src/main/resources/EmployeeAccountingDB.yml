@@ -1,0 +1,8 @@
+# MSSQL Server Database Settings for hikariCP
+jdbcUrl:
+  jdbc:sqlserver://localhost:1433;DatabaseName=EmployeeAccountingDB;encrypt=true;trustServerCertificate=true
+dataSource:
+  user=root
+  password=secret
+  minimumIdle=5
+  maximumPoolSize=25
