@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox minHeight="250.0" minWidth="500.0" prefHeight="269.0" prefWidth="512.0" xmlns="http://javafx.com/javafx/19.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.denys.hudymov.lab4.viewcontroller.LoginController">
+   <children>
+      <AnchorPane prefHeight="38.0" prefWidth="512.0">
+         <children>
+            <Label alignment="CENTER" layoutX="224.0" layoutY="10.0" prefHeight="18.0" prefWidth="64.0" text="Log In Form" AnchorPane.topAnchor="10.0">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </Label>
+         </children>
+      </AnchorPane>
+      <AnchorPane prefHeight="446.0" prefWidth="526.0">
+         <children>
+            <PasswordField fx:id="passwordLoginText" layoutX="181.0" layoutY="96.0" minWidth="100.0" prefHeight="26.0" prefWidth="195.0" promptText="Password" AnchorPane.leftAnchor="181.0" />
+            <Label fx:id="username" alignment="CENTER" layoutX="69.0" layoutY="33.0" prefHeight="18.0" prefWidth="64.0" text="Username" AnchorPane.leftAnchor="69.0">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </Label>
+            <Label alignment="CENTER" layoutX="69.0" layoutY="100.0" prefHeight="18.0" prefWidth="64.0" text="Password" AnchorPane.leftAnchor="68.80000000000001">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </Label>
+            <TextField fx:id="usernameLoginText" layoutX="181.0" layoutY="29.0" prefHeight="26.0" prefWidth="195.0" AnchorPane.leftAnchor="181.0" />
+            <CheckBox fx:id="passwordToggle" layoutX="385.0" layoutY="100.0" mnemonicParsing="false" onMouseClicked="#toggleVisiblePassword" text="show password" AnchorPane.rightAnchor="20.0" />
+         </children>
+      </AnchorPane>
+      <AnchorPane prefHeight="200.0" prefWidth="526.0">
+         <children>
+            <Button fx:id="loginBtn" layoutX="218.0" layoutY="5.0" mnemonicParsing="false" prefHeight="6.0" prefWidth="77.0" text="Login" AnchorPane.bottomAnchor="6.0" AnchorPane.leftAnchor="218.0" AnchorPane.rightAnchor="217.0">
+               <font>
+                  <Font size="17.0" />
+               </font>
+            </Button>
+         </children>
+      </AnchorPane>
+   </children>
+</VBox>
