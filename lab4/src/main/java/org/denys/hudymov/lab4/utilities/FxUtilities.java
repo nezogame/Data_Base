@@ -25,7 +25,7 @@ public class FxUtilities {
 
     public static void switchScene(ActionEvent event, @NotNull String fxml, String title) {
         Parent root = null;
-        FXMLLoader loader = new FXMLLoader(FxUtilities.class.getResource("/" + fxml));
+        FXMLLoader loader = new FXMLLoader(FxUtilities.class.getResource("/org/denys/hudymov/lab4/" + fxml));
         try {
             root = loader.load();
         } catch (IOException e) {

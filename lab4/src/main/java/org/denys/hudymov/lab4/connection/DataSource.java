@@ -22,7 +22,7 @@ public class DataSource {
     private static HikariDataSource dataSource = null;
 
     static {
-        HikariConfig config = new HikariConfig("/EmployeeAccountingDB.yml");
+        HikariConfig config = new HikariConfig("C:\\Users\\Denys\\My learning\\3_Course\\Data_Base\\lab4\\src\\main\\resources\\EmployeeAccountingDB.properties");
         dataSource = new HikariDataSource(config);
     }
 
