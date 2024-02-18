@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.denys.hudymov.lab4.viewcontroller.MainController">
+   <children>
+      <TabPane prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <tabs>
+          <Tab text="Users">
+               <content>
+                  <Pane prefHeight="366.0" prefWidth="645.0">
+                     <children>
+                         <TableView fx:id="userTable" prefHeight="572.0" prefWidth="532.0">
+                             <columns>
+                                 <TableColumn fx:id="userId" prefWidth="62.400025963783264" text="id">
+                                     <cellValueFactory>
+                                         <PropertyValueFactory property="id" />
+                                     </cellValueFactory>
+                                 </TableColumn>
+                                 <TableColumn fx:id="userName" prefWidth="98.39998626708984" text="name" >
+                                     <cellValueFactory>
+                                         <PropertyValueFactory property="name" />
+                                     </cellValueFactory>
+                                 </TableColumn>
+                                 <TableColumn fx:id="userSurname" prefWidth="93.5999755859375" text="last_name" >
+                                     <cellValueFactory>
+                                         <PropertyValueFactory property="lastName" />
+                                     </cellValueFactory>
+                                 </TableColumn>
+                                 <TableColumn fx:id="userPassword" prefWidth="191.2000732421875" text="password" >
+                                     <cellValueFactory>
+                                         <PropertyValueFactory property="password" />
+                                     </cellValueFactory>
+                                 </TableColumn>
+                                 <TableColumn fx:id="userRole" minWidth="0.0" prefWidth="84.80001831054688" text="role" >
+                                     <cellValueFactory>
+                                         <PropertyValueFactory property="role" />
+                                     </cellValueFactory>
+                                 </TableColumn>
+                             </columns>
+                         </TableView>
+                        <Button fx:id="readUser" layoutX="756.0" layoutY="63.0" mnemonicParsing="false" onMouseClicked="#populateUserTable" prefHeight="25.0" prefWidth="103.0" text="Button" />
+                     </children></Pane>
+               </content>
+            </Tab>
+          <Tab text="Untitled Tab 2">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="userTable1" prefHeight="372.0">
+                           <columns>
+                              <TableColumn prefWidth="75.0" text="id" />
+                              <TableColumn prefWidth="75.0" text="name" />
+                              <TableColumn prefWidth="75.0" text="last_name" />
+                              <TableColumn prefWidth="75.0" text="password" />
+                              <TableColumn prefWidth="75.0" text="role" />
+                           </columns>
+                        </TableView>
+                     </children>
+                  </Pane>
+               </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+   </children>
+</AnchorPane>
