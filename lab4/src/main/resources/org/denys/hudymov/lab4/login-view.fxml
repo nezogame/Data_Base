@@ -40,7 +40,7 @@
       </AnchorPane>
       <AnchorPane prefHeight="200.0" prefWidth="526.0">
          <children>
-            <Button fx:id="loginBtn" layoutX="218.0" layoutY="5.0" mnemonicParsing="false" prefHeight="6.0" prefWidth="77.0" text="Login" AnchorPane.bottomAnchor="6.0" AnchorPane.leftAnchor="218.0" AnchorPane.rightAnchor="217.0">
+            <Button fx:id="loginBtn" layoutX="217.0" layoutY="3.0" mnemonicParsing="false" onAction="#authenticate" prefHeight="6.0" prefWidth="77.0" text="Login" AnchorPane.bottomAnchor="3.3999999999999986" AnchorPane.leftAnchor="217.0" AnchorPane.rightAnchor="218.2">
                <font>
                   <Font size="17.0" />
                </font>

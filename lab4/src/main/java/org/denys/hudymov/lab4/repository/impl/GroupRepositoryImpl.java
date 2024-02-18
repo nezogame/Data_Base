@@ -32,4 +32,24 @@ public class GroupRepositoryImpl implements GroupRepository {
     public void deleteById(Long id) throws IllegalArgumentException, SQLIntegrityConstraintViolationException {
 
     }
+
+    @Override
+    public Optional<Group> findGroupByName(String name) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Group> findGroupByNameAndWorkerQuantity(String name) {
+        return Optional.empty();
+    }
+
+    @Override
+    public List<Group> findIncompleteGroups() {
+        return null;
+    }
+
+    @Override
+    public List<Group> findCompleteGroups() {
+        return null;
+    }
 }

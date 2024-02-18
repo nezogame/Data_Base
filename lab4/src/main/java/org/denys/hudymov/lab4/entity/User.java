@@ -14,9 +14,9 @@ import org.denys.hudymov.lab4.enums.Role;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    private String name;
-    @NotEmpty(message = "Name cannot be empty")
     private Long id;
+    @NotEmpty(message = "Name cannot be empty")
+    private String name;
     @NotEmpty(message = "Last Name cannot be empty")
     private String lastName;
     @NotEmpty(message = "password cannot be empty")
