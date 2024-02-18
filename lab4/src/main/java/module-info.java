@@ -13,4 +13,5 @@ module org.denys.hudymov.lab4 {
     exports org.denys.hudymov.lab4;
     exports org.denys.hudymov.lab4.viewcontroller;
     opens org.denys.hudymov.lab4.viewcontroller to javafx.fxml;
+    opens org.denys.hudymov.lab4.entity to javafx.base;
 }
