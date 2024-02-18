@@ -65,6 +65,7 @@ public class UserRepositoryImpl implements UserRepository {
                         .id(resultSet.getLong("id"))
                         .name(resultSet.getString("name"))
                         .lastName(resultSet.getString("last_name"))
+                        .password(resultSet.getString("password"))
                         .role(Role.valueOf(resultSet.getString("role")))
                         .build();
                 users.add(user);
