@@ -42,7 +42,7 @@ public interface Crud<T, ID> {
      * @throws SQLException             in case of any error in sql query
      * @throws IllegalArgumentException in case the given entity is null.
      */
-    T update(T entity) throws SQLException;
+    T update(T entity) throws SQLException, IllegalArgumentException;
 
     /**
      * Deletes the entity with the given id.
