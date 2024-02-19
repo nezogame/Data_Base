@@ -10,9 +10,16 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+import org.denys.hudymov.lab4.entity.User;
 
 
 public class FxUtilities {
+
+    @Getter
+    @Setter()
+    private static User currentUser;
 
     public static void displayInformationPopup(String message, AlertType type) {
         Alert alert = new Alert(type);

@@ -33,7 +33,8 @@ public class UserRepositoryImpl implements UserRepository {
 
             preparedStatement.setString(1, entity.getName());
             preparedStatement.setString(2, entity.getLastName());
-            preparedStatement.setString(3, entity.getRole().toString());
+            preparedStatement.setString(3, entity.getPassword());
+            preparedStatement.setString(4, entity.getRole().toString());
             preparedStatement.executeUpdate();
 
             selectStatement.setString(1, entity.getPassword());
@@ -84,19 +85,21 @@ public class UserRepositoryImpl implements UserRepository {
         }
         Optional<User> user = Optional.empty();
         String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
-                "WHERE client_id=?";
+                "WHERE id=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
 
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            user = Optional.ofNullable(User.builder()
-                    .id(resultSet.getLong("id"))
-                    .name(resultSet.getString("name"))
-                    .lastName(resultSet.getString("last_name"))
-                    .role(Role.valueOf(resultSet.getString("role")))
-                    .build());
-
+            if(resultSet.next()) {
+                user = Optional.ofNullable(User.builder()
+                        .id(resultSet.getLong("id"))
+                        .name(resultSet.getString("name"))
+                        .lastName(resultSet.getString("last_name"))
+                        .password(resultSet.getString("password"))
+                        .role(Role.valueOf(resultSet.getString("role")))
+                        .build());
+            }
             resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -105,7 +108,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User update(User entity) throws SQLException {
+    public User update(User entity) throws SQLException, IllegalArgumentException {
         if (entity == null) {
             throw new IllegalArgumentException("User can't be null");
         }
@@ -148,12 +151,12 @@ public class UserRepositoryImpl implements UserRepository {
 
 
     @Override
-    public Optional<Role> findUserRoleByNameAndPassword(String name, String password) throws IllegalArgumentException {
+    public Optional<User> findUserByNameAndPassword(String name, String password) throws IllegalArgumentException {
         if (name == null || password == null) {
             throw new IllegalArgumentException("ID can't be null");
         }
-        Optional<Role> role = Optional.empty();
-        String readSql = "SELECT role FROM users WITH(HOLDLOCK) " +
+        Optional<User> user = Optional.empty();
+        String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
                 "WHERE name=? and password=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
@@ -162,12 +165,18 @@ public class UserRepositoryImpl implements UserRepository {
             preparedStatement.setString(2, password);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                role = Optional.of(Role.valueOf(resultSet.getString("role")));
+                user = Optional.ofNullable(User.builder()
+                        .id(resultSet.getLong("id"))
+                        .name(resultSet.getString("name"))
+                        .lastName(resultSet.getString("last_name"))
+                        .password(resultSet.getString("password"))
+                        .role(Role.valueOf(resultSet.getString("role")))
+                        .build());
             }
             resultSet.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return role;
+        return user;
     }
 }

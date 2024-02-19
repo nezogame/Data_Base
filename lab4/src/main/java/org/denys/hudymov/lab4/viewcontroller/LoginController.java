@@ -1,5 +1,7 @@
 package org.denys.hudymov.lab4.viewcontroller;
 
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -9,14 +11,21 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import lombok.Data;
 import net.synedra.validatorfx.Validator;
+import org.denys.hudymov.lab4.entity.Log;
+import org.denys.hudymov.lab4.entity.User;
+import org.denys.hudymov.lab4.repository.LogRepository;
 import org.denys.hudymov.lab4.repository.UserRepository;
+import org.denys.hudymov.lab4.repository.impl.LogRepositoryImpl;
 import org.denys.hudymov.lab4.repository.impl.UserRepositoryImpl;
+import org.denys.hudymov.lab4.utilities.FxUtilities;
 
 import static org.denys.hudymov.lab4.utilities.FxUtilities.displayInformationPopup;
 import static org.denys.hudymov.lab4.utilities.FxUtilities.switchScene;
 
 @Data
 public class LoginController {
+
+    LogRepository log = new LogRepositoryImpl();
 
     private UserRepository userRepository = new UserRepositoryImpl();
 
@@ -87,7 +96,22 @@ public class LoginController {
             displayInformationPopup("you violated text fields constraints!", Alert.AlertType.ERROR);
             return;
         }
-        if (userRepository.findUserRoleByNameAndPassword(username, password).isPresent()) {
+        var user = userRepository.findUserByNameAndPassword(username, password);
+        if (user.isPresent()) {
+
+            FxUtilities.setCurrentUser(user.get());
+
+            var logEntity = Log.builder()
+                    .dateTime(ZonedDateTime.now())
+                    .userId(user.get().getId())
+                    .action("Log In")
+                    .build();
+
+            try {
+                log.create(logEntity);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
             switchScene(event, "main-view.fxml", "Main");
         }
     }
