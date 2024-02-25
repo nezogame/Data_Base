@@ -12,7 +12,6 @@ import javafx.scene.control.TextField;
 import lombok.Data;
 import net.synedra.validatorfx.Validator;
 import org.denys.hudymov.lab4.entity.Log;
-import org.denys.hudymov.lab4.entity.User;
 import org.denys.hudymov.lab4.repository.LogRepository;
 import org.denys.hudymov.lab4.repository.UserRepository;
 import org.denys.hudymov.lab4.repository.impl.LogRepositoryImpl;
@@ -113,6 +112,8 @@ public class LoginController {
                 e.printStackTrace();
             }
             switchScene(event, "main-view.fxml", "Main");
+        } else {
+            displayInformationPopup("This user doesn't exist!", Alert.AlertType.WARNING);
         }
     }
 

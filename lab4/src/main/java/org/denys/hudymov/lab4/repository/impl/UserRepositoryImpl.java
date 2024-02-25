@@ -9,14 +9,16 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javafx.scene.control.Alert;
 import org.denys.hudymov.lab4.connection.DataSource;
 import org.denys.hudymov.lab4.entity.User;
 import org.denys.hudymov.lab4.enums.Role;
 import org.denys.hudymov.lab4.repository.UserRepository;
+import org.denys.hudymov.lab4.utilities.FxUtilities;
 
 public class UserRepositoryImpl implements UserRepository {
     @Override
-    public User create(User entity) throws SQLException, IllegalArgumentException {
+    public User create(User entity) throws IllegalArgumentException, SQLException, SQLIntegrityConstraintViolationException {
         if (entity == null) {
             throw new IllegalArgumentException("User can't be null");
         }
@@ -24,6 +26,12 @@ public class UserRepositoryImpl implements UserRepository {
         String insertQuery = "INSERT INTO users(name, last_name, password, role) VALUES(?,?,?,?)";
 
         String selectQuery = "SELECT id FROM users WITH(HOLDLOCK) WHERE password = ?";
+
+        var message = FxUtilities.displayInformationAboutTransaction(
+                "Please wait until another transaction will execute",
+                Alert.AlertType.INFORMATION
+        );
+        message.show();
 
         var connection = DataSource.getConnection();
         var commit = connection.getAutoCommit();
@@ -46,6 +54,13 @@ public class UserRepositoryImpl implements UserRepository {
                 }
             }
 
+        } catch (SQLException e) {
+            connection.rollback();
+            connection.setAutoCommit(commit);
+            connection.close();
+            throw new SQLIntegrityConstraintViolationException("This password already exist!");
+        } finally {
+            message.close();
         }
         connection.commit();
         connection.setAutoCommit(commit);
@@ -80,18 +95,20 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findById(Long id) throws IllegalArgumentException {
+        String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
+                "WHERE id=?";
+
         if (id == null) {
             throw new IllegalArgumentException("ID can't be null");
         }
+
         Optional<User> user = Optional.empty();
-        String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
-                "WHERE id=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
 
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()) {
+            if (resultSet.next()) {
                 user = Optional.ofNullable(User.builder()
                         .id(resultSet.getLong("id"))
                         .name(resultSet.getString("name"))
@@ -109,15 +126,22 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User update(User entity) throws SQLException, IllegalArgumentException {
+        String updateQuery = "UPDATE users set name=?, last_name=?, password=?, role=? " +
+                "WHERE id=?";
+
         if (entity == null) {
             throw new IllegalArgumentException("User can't be null");
         }
 
-        String updateQuery = "UPDATE users set name=?, last_name=?, password=?, role=? " +
-                "WHERE id=?";
+        var message = FxUtilities.displayInformationAboutTransaction(
+                "Please wait until another transaction will execute",
+                Alert.AlertType.INFORMATION
+        );
+        message.show();
 
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+
 
             preparedStatement.setString(1, entity.getName());
             preparedStatement.setString(2, entity.getLastName());
@@ -125,6 +149,8 @@ public class UserRepositoryImpl implements UserRepository {
             preparedStatement.setString(4, entity.getRole().toString());
             preparedStatement.setLong(5, entity.getId());
             preparedStatement.executeUpdate();
+        } finally {
+            message.close();
         }
 
         return entity;
@@ -132,13 +158,18 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void deleteById(Long id) throws IllegalArgumentException, SQLIntegrityConstraintViolationException {
+        String deleteQuery = "DELETE FROM users " +
+                "WHERE id=?";
+
         if (id == null) {
             throw new IllegalArgumentException("ID can't be null");
         }
 
-        String deleteQuery = "DELETE FROM users " +
-                "WHERE id=?";
-
+        var message = FxUtilities.displayInformationAboutTransaction(
+                "Please wait until another transaction will execute",
+                Alert.AlertType.INFORMATION
+        );
+        message.show();
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(deleteQuery)) {
 
@@ -146,18 +177,21 @@ public class UserRepositoryImpl implements UserRepository {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new SQLIntegrityConstraintViolationException(e.getMessage());
+        } finally {
+            message.close();
         }
     }
 
 
     @Override
     public Optional<User> findUserByNameAndPassword(String name, String password) throws IllegalArgumentException {
+        String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
+                "WHERE name=? and password=?";
+
         if (name == null || password == null) {
             throw new IllegalArgumentException("ID can't be null");
         }
         Optional<User> user = Optional.empty();
-        String readSql = "SELECT * FROM users WITH(HOLDLOCK) " +
-                "WHERE name=? and password=?";
         try (Connection connection = DataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(readSql)) {
 
