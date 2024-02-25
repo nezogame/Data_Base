@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +23,7 @@ public class LogRepositoryImpl implements LogRepository {
         if (entity == null) {
             throw new IllegalArgumentException("Log can't be null");
         }
-
+        final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
         String insertQuery = "INSERT INTO logs(date, action, user_id) VALUES(?,?,?)";
 
         String selectQuery = "SELECT id FROM logs WITH(HOLDLOCK) WHERE date= ? ";
@@ -31,13 +33,17 @@ public class LogRepositoryImpl implements LogRepository {
         connection.setAutoCommit(false);
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
              PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
-
-            preparedStatement.setTimestamp(1, Timestamp.valueOf(entity.getDateTime().toLocalDateTime()));
+            //System.out.println(Timestamp.valueOf("ONE:"+Timestamp.valueOf(DateTimeFormatter.ofPattern(DATE_FORMAT).format(entity.getDateTime()))));
+            preparedStatement.setTimestamp(1, Timestamp.valueOf(DateTimeFormatter.ofPattern(DATE_FORMAT).format(entity.getDateTime())));
             preparedStatement.setString(2, entity.getAction());
             preparedStatement.setLong(3, entity.getUserId());
             preparedStatement.executeUpdate();
+            //System.out.println(Timestamp.valueOf("TWO:"+Timestamp.valueOf(DateTimeFormatter.ofPattern(DATE_FORMAT).format(entity.getDateTime()))));
 
-            selectStatement.setTimestamp(1, Timestamp.valueOf(entity.getDateTime().toLocalDateTime()));
+            selectStatement.setTimestamp(
+                    1,
+                    Timestamp.valueOf(DateTimeFormatter.ofPattern(DATE_FORMAT).format(entity.getDateTime()))
+            );
 
             try (ResultSet resultSet = selectStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -46,6 +52,11 @@ public class LogRepositoryImpl implements LogRepository {
                 }
             }
 
+        } catch (SQLException e) {
+            connection.rollback();
+            connection.setAutoCommit(commit);
+            connection.close();
+            throw new SQLException(e.getMessage());
         }
         connection.commit();
         connection.setAutoCommit(commit);
@@ -60,11 +71,14 @@ public class LogRepositoryImpl implements LogRepository {
         try (Connection connection = DataSource.getConnection();
              Statement statement = connection.createStatement()) {
 
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM logs WITH(HOLDLOCK)");
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM logs ");
             while (resultSet.next()) {
                 Log log = Log.builder()
                         .id(resultSet.getLong("id"))
-                        .dateTime(ZonedDateTime.from(resultSet.getTimestamp("date").toLocalDateTime()))
+                        .dateTime(ZonedDateTime.of(
+                                resultSet.getTimestamp("date").toLocalDateTime(),
+                                ZoneId.systemDefault())
+                        )
                         .action(resultSet.getString("action"))
                         .userId(resultSet.getLong("user_id"))
                         .build();
