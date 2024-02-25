@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.ConstraintViolationException;
 
 public interface Crud<T, ID> {
     /**
@@ -15,7 +16,7 @@ public interface Crud<T, ID> {
      * @throws SQLException             in case of any error in sql query
      * @throws IllegalArgumentException in case the given entity is null.
      */
-    T create(T entity) throws SQLException, IllegalArgumentException;
+    T create(T entity) throws SQLException, IllegalArgumentException, ConstraintViolationException;
 
     /**
      * Returns all instances of the type.

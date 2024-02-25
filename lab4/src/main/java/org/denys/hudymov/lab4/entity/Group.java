@@ -13,6 +13,5 @@ import lombok.NoArgsConstructor;
 public class Group {
     private Long id;
     private String name;
-    private Long userId;
-    private Set<User> users;
+    private Integer size;
 }

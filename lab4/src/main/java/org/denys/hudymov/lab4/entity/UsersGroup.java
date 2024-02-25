@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UsersGroup {
-    Long group_id;
-    Long user_id;
+    private Long groupId;
+    private Long userId;
     private Set<User> users;
     private Set<Group> groups;
 }
