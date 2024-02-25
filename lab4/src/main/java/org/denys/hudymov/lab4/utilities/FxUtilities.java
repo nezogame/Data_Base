@@ -30,6 +30,14 @@ public class FxUtilities {
         alert.showAndWait(); // Wait for the user to close the dialog
     }
 
+    public static Alert displayInformationAboutTransaction(String message, AlertType type) {
+        Alert alert = new Alert(type, message);
+        alert.setTitle(message);
+        alert.setHeaderText("Wait please");
+
+        return alert;
+    }
+
     public static void switchScene(ActionEvent event, @NotNull String fxml, String title) {
         Parent root = null;
         FXMLLoader loader = new FXMLLoader(FxUtilities.class.getResource("/org/denys/hudymov/lab4/" + fxml));
