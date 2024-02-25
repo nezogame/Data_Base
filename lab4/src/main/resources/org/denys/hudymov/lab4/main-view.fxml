@@ -7,6 +7,7 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -63,22 +64,115 @@
                         <TextField fx:id="userIdField" layoutX="622.0" layoutY="355.0" />
                         <Label layoutX="552.0" layoutY="359.0" text="User ID" />
                         <Button fx:id="saveUserBtn" layoutX="668.0" layoutY="261.0" mnemonicParsing="false" onMouseClicked="#saveUser" prefHeight="25.0" prefWidth="103.0" text="Create" />
+                        <Button fx:id="updateUsers" layoutX="539.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#updateUserTable" text="Reload" />
                      </children></Pane>
                </content>
             </Tab>
-          <Tab text="Untitled Tab 2">
+          <Tab text="Psycho Health">
                <content>
                   <Pane prefHeight="200.0" prefWidth="200.0">
                      <children>
-                        <TableView fx:id="userTable1" prefHeight="372.0">
+                        <TableView fx:id="psychoHealthTable" prefHeight="572.0" prefWidth="532.0">
                            <columns>
-                              <TableColumn prefWidth="75.0" text="id" />
-                              <TableColumn prefWidth="75.0" text="name" />
-                              <TableColumn prefWidth="75.0" text="last_name" />
-                              <TableColumn prefWidth="75.0" text="password" />
-                              <TableColumn prefWidth="75.0" text="role" />
+                              <TableColumn fx:id="psychoId" prefWidth="71.99999845027924" text="id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="id" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="characteristic" prefWidth="378.3999710083008" text="characteristic">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="characteristic" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="psychoUserId" prefWidth="81.60000610351562" text="user id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="userId" />
+                                 </cellValueFactory>
+                              </TableColumn>
                            </columns>
                         </TableView>
+                        <Button fx:id="findCharacteristicBtn" layoutX="571.0" layoutY="420.0" mnemonicParsing="false" onMouseClicked="#findCharacteristicById" prefHeight="25.0" prefWidth="103.0" text="Search" />
+                        <TextField fx:id="healthUserIdField" layoutX="668.0" layoutY="200.0" />
+                        <Label layoutX="674.0" layoutY="22.0" text="Characteristic" />
+                        <Label layoutX="581.0" layoutY="204.0" text="User ID" />
+                        <Button fx:id="updateCharacteristicBtn" layoutX="719.0" layoutY="420.0" mnemonicParsing="false" onMouseClicked="#updateCharacteristic" prefHeight="25.0" prefWidth="103.0" text="Update" />
+                        <Button fx:id="deleteCharacteristicBtn" layoutX="794.0" layoutY="355.0" mnemonicParsing="false" onMouseClicked="#deleteCharacteristicById" prefHeight="25.0" prefWidth="69.0" text="Delete" />
+                        <TextField fx:id="psychoIdField" layoutX="622.0" layoutY="355.0" />
+                        <Label layoutX="552.0" layoutY="359.0" text="Psycho ID" />
+                        <Button fx:id="saveCharacteristicBtn" layoutX="668.0" layoutY="261.0" mnemonicParsing="false" onMouseClicked="#saveCharacteristic" prefHeight="25.0" prefWidth="103.0" text="Create" />
+                        <TextArea fx:id="characteristicField" layoutX="581.0" layoutY="52.0" prefHeight="129.0" prefWidth="290.0" />
+                        <Button fx:id="updatePsychoHealth" layoutX="545.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#updatePsychoHealthTable" text="Reload" />
+                     </children>
+                  </Pane>
+               </content>
+            </Tab>
+            <Tab text="Groups">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="groupTable" prefHeight="572.0" prefWidth="532.0">
+                           <columns>
+                              <TableColumn fx:id="groupId" prefWidth="62.400025963783264" text="id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="id" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="groupName" prefWidth="295.2000198364258" text="name">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="name" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="groupSize" prefWidth="173.5999755859375" text="size">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="size" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                           </columns>
+                        </TableView>
+                        <Button fx:id="findGroupBtn" layoutX="571.0" layoutY="420.0" mnemonicParsing="false" onMouseClicked="#findGroupById" prefHeight="25.0" prefWidth="103.0" text="Search" />
+                        <TextField fx:id="groupNameField" layoutX="666.0" layoutY="138.0" />
+                        <TextField fx:id="groupSizeField" layoutX="666.0" layoutY="192.0" />
+                        <Label layoutX="598.0" layoutY="142.0" text="Name" />
+                        <Label layoutX="603.0" layoutY="196.0" text="Size" />
+                        <Button fx:id="updateGroupBtn" layoutX="719.0" layoutY="420.0" mnemonicParsing="false" onMouseClicked="#updateGroup" prefHeight="25.0" prefWidth="103.0" text="Update" />
+                        <Button fx:id="deleteGroupBtn" layoutX="794.0" layoutY="355.0" mnemonicParsing="false" onMouseClicked="#deleteGroupById" prefHeight="25.0" prefWidth="69.0" text="Delete" />
+                        <TextField fx:id="groupIdField" layoutX="622.0" layoutY="355.0" />
+                        <Label layoutX="552.0" layoutY="359.0" text="Group ID" />
+                        <Button fx:id="saveGroupBtn" layoutX="668.0" layoutY="261.0" mnemonicParsing="false" onMouseClicked="#saveGroup" prefHeight="25.0" prefWidth="103.0" text="Create" />
+                        <Button fx:id="updateGroup" layoutX="545.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#updateGroupTable" text="Reload" />
+                     </children>
+                  </Pane>
+               </content>
+            </Tab>
+            <Tab text="Logs">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="logTable" prefHeight="572.0" prefWidth="532.0">
+                           <columns>
+                              <TableColumn fx:id="logId" prefWidth="62.400025963783264" text="id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="id" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="logDate" prefWidth="260.80001068115234" text="date">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="dateTime" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="logAction" prefWidth="123.199951171875" text="action">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="action" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="logUserId" prefWidth="87.19998168945312" text="user id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="userId" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                           </columns>
+                        </TableView>
+                        <Button fx:id="updateLogs" layoutX="572.0" layoutY="14.0" mnemonicParsing="false" onMouseClicked="#updateLogTable" text="Reload" />
                      </children>
                   </Pane>
                </content>
