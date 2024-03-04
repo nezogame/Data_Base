@@ -2,9 +2,9 @@ package org.denys.hudymov.lab4.repository;
 
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLWarning;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.ConstraintViolationException;
 
 public interface Crud<T, ID> {
     /**
@@ -16,7 +16,7 @@ public interface Crud<T, ID> {
      * @throws SQLException             in case of any error in sql query
      * @throws IllegalArgumentException in case the given entity is null.
      */
-    T create(T entity) throws SQLException, IllegalArgumentException, ConstraintViolationException;
+    T create(T entity) throws SQLException, IllegalArgumentException, SQLIntegrityConstraintViolationException;
 
     /**
      * Returns all instances of the type.
@@ -43,7 +43,7 @@ public interface Crud<T, ID> {
      * @throws SQLException             in case of any error in sql query
      * @throws IllegalArgumentException in case the given entity is null.
      */
-    T update(T entity) throws SQLException, IllegalArgumentException;
+    T update(T entity) throws SQLException, IllegalArgumentException, SQLWarning;
 
     /**
      * Deletes the entity with the given id.
