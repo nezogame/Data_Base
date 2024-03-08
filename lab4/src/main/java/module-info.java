@@ -8,6 +8,7 @@ module org.denys.hudymov.lab4 {
     requires java.sql;
     requires com.zaxxer.hikari;
     requires java.validation;
+    requires itextpdf;
 
     opens org.denys.hudymov.lab4 to javafx.fxml;
     exports org.denys.hudymov.lab4;

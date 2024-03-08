@@ -140,6 +140,99 @@
                         <Label layoutX="552.0" layoutY="359.0" text="Group ID" />
                         <Button fx:id="saveGroupBtn" layoutX="668.0" layoutY="261.0" mnemonicParsing="false" onMouseClicked="#saveGroup" prefHeight="25.0" prefWidth="103.0" text="Create" />
                         <Button fx:id="updateGroup" layoutX="545.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#updateGroupTable" text="Reload" />
+                        <Button fx:id="groupsToPdfBtn" layoutX="622.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#groupsToPdf" text="Groups to PDF" />
+                     </children>
+                  </Pane>
+               </content>
+            </Tab>
+            <Tab text="Work Group">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="workTable" prefHeight="572.0" prefWidth="532.0">
+                           <columns>
+                              <TableColumn fx:id="workGroupId" prefWidth="261.60000002384186" text="group id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="groupId" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="workUserId" prefWidth="269.6000061035156" text="user id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="userId" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                           </columns>
+                        </TableView>
+                        <Button fx:id="deleteWorkBtn" layoutX="685.0" layoutY="314.0" mnemonicParsing="false" onMouseClicked="#deleteWorkById" prefHeight="25.0" prefWidth="69.0" text="Delete" />
+                        <Button fx:id="saveWorkBtn" layoutX="668.0" layoutY="261.0" mnemonicParsing="false" onMouseClicked="#saveWork" prefHeight="25.0" prefWidth="103.0" text="Create" />
+                        <Button fx:id="updateWork" layoutX="545.0" layoutY="532.0" mnemonicParsing="false" onMouseClicked="#updateWorkTable" text="Reload" />
+                        <TextField fx:id="workGroupIdField" layoutX="666.0" layoutY="138.0" />
+                        <TextField fx:id="workUserIdField" layoutX="666.0" layoutY="192.0" />
+                        <Label layoutX="598.0" layoutY="142.0" text="Group ID" />
+                        <Label layoutX="603.0" layoutY="196.0" text="User ID" />
+                     </children>
+                  </Pane>
+               </content>
+            </Tab>
+            <Tab text="Manage">
+               <content>
+                  <Pane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="manageTable" prefHeight="286.0" prefWidth="532.0">
+                           <columns>
+                              <TableColumn fx:id="manageGroupId" prefWidth="62.400025963783264" text="id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="id" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="manageGroupName" prefWidth="295.2000198364258" text="name">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="name" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="manageGroupSize" prefWidth="173.5999755859375" text="size">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="size" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                           </columns>
+                        </TableView>
+                        <Button fx:id="findGroupByNameAndSizeBtn" layoutX="650.0" layoutY="309.0" mnemonicParsing="false" onMouseClicked="#findGroupByNameAndSize" prefHeight="25.0" prefWidth="147.0" text="Find by Name and Size" />
+                        <TextField fx:id="workNameAndSizeField" layoutX="648.0" layoutY="212.0" />
+                        <TextField fx:id="workSizeField" layoutX="648.0" layoutY="266.0" />
+                        <Label layoutX="580.0" layoutY="216.0" text="Name" />
+                        <Label layoutX="585.0" layoutY="270.0" text="Size" />
+                        <Button fx:id="findGroupByNameBtn" layoutX="650.0" layoutY="163.0" mnemonicParsing="false" onMouseClicked="#findGroupByName" prefHeight="25.0" prefWidth="103.0" text="Find by Name" />
+                        <TextField fx:id="workNameField" layoutX="648.0" layoutY="123.0" />
+                        <Label layoutX="580.0" layoutY="127.0" text="Name" />
+                        <Button fx:id="findUnfinishedGroupBtn" layoutX="640.0" layoutY="358.0" mnemonicParsing="false" onMouseClicked="#findUnfinishedGroup" prefHeight="25.0" prefWidth="167.0" text="Find Incompleted Groups" />
+                        <Button fx:id="findUserWithPsychoHealthBtn" layoutX="628.0" layoutY="412.0" mnemonicParsing="false" onMouseClicked="#findUserWithPsychoHealth" prefHeight="25.0" prefWidth="188.0" text="Find User With Psycho Health" />
+                        <TableView fx:id="manageUserTable" layoutY="276.0" prefHeight="296.0" prefWidth="532.0">
+                           <columns>
+                              <TableColumn fx:id="manageUserId" prefWidth="62.400025963783264" text="id">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="id" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="manageUserName" prefWidth="124.7999496459961" text="name">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="name" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="manageUserLastName" prefWidth="121.60000610351562" text="last name">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="lastName" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                              <TableColumn fx:id="manageUserCharacteristic" prefWidth="219.99996948242188" text="characteristic">
+                                 <cellValueFactory>
+                                    <PropertyValueFactory property="characteristic" />
+                                 </cellValueFactory>
+                              </TableColumn>
+                           </columns>
+                        </TableView>
+                        <Button fx:id="userToPdfBtn" layoutX="556.0" layoutY="507.0" mnemonicParsing="false" onMouseClicked="#usersToPdf" prefHeight="25.0" prefWidth="106.0" text="Users to PDF" />
+                        <Button fx:id="incomplateGroupsToPdfBtn" layoutX="683.0" layoutY="507.0" mnemonicParsing="false" onMouseClicked="#incompleteGroupsToPdf" prefHeight="25.0" prefWidth="106.0" text="groups to PDF" />
                      </children>
                   </Pane>
                </content>

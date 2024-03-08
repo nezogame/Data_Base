@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import javafx.scene.control.Alert;
 import org.denys.hudymov.lab4.connection.DataSource;
 import org.denys.hudymov.lab4.entity.User;
+import org.denys.hudymov.lab4.entity.UserHealth;
 import org.denys.hudymov.lab4.enums.Role;
 import org.denys.hudymov.lab4.repository.UserRepository;
 import org.denys.hudymov.lab4.utilities.FxUtilities;
@@ -125,7 +127,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User update(User entity) throws SQLException, IllegalArgumentException {
+    public User update(User entity) throws SQLException, IllegalArgumentException, SQLWarning {
+        String lockQuery = "SELECT * FROM users With(UPDLOCK) " +
+                "WHERE id=?";
         String updateQuery = "UPDATE users set name=?, last_name=?, password=?, role=? " +
                 "WHERE id=?";
 
@@ -140,8 +144,26 @@ public class UserRepositoryImpl implements UserRepository {
         message.show();
 
         try (Connection connection = DataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(updateQuery)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
+             PreparedStatement lockStatement = connection.prepareStatement(lockQuery)) {
 
+            lockStatement.setLong(1, entity.getId());
+
+            ResultSet resultSet = lockStatement.executeQuery();
+            if (resultSet.next()) {
+
+                var user = User.builder()
+                        .id(resultSet.getLong("id"))
+                        .name(resultSet.getString("name"))
+                        .lastName(resultSet.getString("last_name"))
+                        .password(resultSet.getString("password"))
+                        .role(Role.valueOf(resultSet.getString("role")))
+                        .build();
+
+                if(!FxUtilities.getOptimisticLockHash().equals(user.hashCode())){
+                    throw new SQLWarning("This row already updated by another user try one more time after checking");
+                }
+            }
 
             preparedStatement.setString(1, entity.getName());
             preparedStatement.setString(2, entity.getLastName());
@@ -212,5 +234,32 @@ public class UserRepositoryImpl implements UserRepository {
             e.printStackTrace();
         }
         return user;
+    }
+
+    @Override
+    public List<UserHealth> userWithPsychoHealth() throws SQLException {
+        String readSql = "SELECT us.id, us.name, us.last_name, p.characteristic " +
+                "FROM users us " +
+                "INNER JOIN psycho_health p " +
+                "ON us.id = p.user_id";
+
+        List<UserHealth> users = new ArrayList<>();
+        try (Connection connection = DataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+
+            ResultSet resultSet = statement.executeQuery(readSql);
+
+            while (resultSet.next()) {
+                UserHealth userHealth = UserHealth.builder()
+                        .id(resultSet.getLong("id"))
+                        .name(resultSet.getString("name"))
+                        .lastName(resultSet.getString("last_name"))
+                        .characteristic(resultSet.getString("characteristic"))
+                        .build();
+                users.add(userHealth);
+            }
+            resultSet.close();
+        }
+        return users;
     }
 }
